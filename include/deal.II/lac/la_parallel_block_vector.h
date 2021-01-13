@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 1999 - 2018 by the deal.II authors
+// Copyright (C) 1999 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -79,7 +79,6 @@ namespace LinearAlgebra
      *
      * @see
      * @ref GlossBlockLA "Block (linear algebra)"
-     * @author Katharina Kormann, Martin Kronbichler, 2011
      */
     template <typename Number>
     class BlockVector : public BlockVectorBase<Vector<Number>>,
@@ -174,13 +173,13 @@ namespace LinearAlgebra
        */
       BlockVector(const std::vector<IndexSet> &local_ranges,
                   const std::vector<IndexSet> &ghost_indices,
-                  const MPI_Comm               communicator);
+                  const MPI_Comm &             communicator);
 
       /**
        * Same as above but the ghost indices are assumed to be empty.
        */
       BlockVector(const std::vector<IndexSet> &local_ranges,
-                  const MPI_Comm               communicator);
+                  const MPI_Comm &             communicator);
 
       /**
        * Destructor.
@@ -327,7 +326,6 @@ namespace LinearAlgebra
        * i.e., whenever a non-zero ghost element is found, it is compared to
        * the value on the owning processor and an exception is thrown if these
        * elements do not agree.
-       *
        */
       virtual void
       compress(::dealii::VectorOperation::values operation) override;
@@ -375,31 +373,6 @@ namespace LinearAlgebra
        */
       void
       sadd(const Number s, const BlockVector<Number> &V);
-
-      /**
-       * Assignment <tt>*this = a*u + b*v</tt>.
-       *
-       * This function is deprecated.
-       */
-      DEAL_II_DEPRECATED
-      void
-      equ(const Number               a,
-          const BlockVector<Number> &u,
-          const Number               b,
-          const BlockVector<Number> &v);
-
-      /**
-       * Scaling and multiple addition.
-       *
-       * This function is deprecated.
-       */
-      DEAL_II_DEPRECATED
-      void
-      sadd(const Number               s,
-           const Number               a,
-           const BlockVector<Number> &V,
-           const Number               b,
-           const BlockVector<Number> &W);
 
       /**
        * Return whether the vector contains only elements with value zero.
@@ -734,7 +707,6 @@ namespace LinearAlgebra
  * exchanges the data of the two vectors.
  *
  * @relatesalso BlockVector
- * @author Katharina Kormann, Martin Kronbichler, 2011
  */
 template <typename Number>
 inline void
@@ -746,9 +718,8 @@ swap(LinearAlgebra::distributed::BlockVector<Number> &u,
 
 
 /**
- * Declare dealii::LinearAlgebra::BlockVector< Number > as distributed vector.
- *
- * @author Uwe Koecher, 2017
+ * Declare dealii::LinearAlgebra::distributed::BlockVector as distributed
+ * vector.
  */
 template <typename Number>
 struct is_serial_vector<LinearAlgebra::distributed::BlockVector<Number>>

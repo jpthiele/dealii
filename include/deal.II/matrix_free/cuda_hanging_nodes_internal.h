@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2018 - 2019 by the deal.II authors
+// Copyright (C) 2018 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -20,6 +20,7 @@
 
 #ifdef DEAL_II_COMPILER_CUDA_AWARE
 
+#  include <deal.II/base/cuda_size.h>
 #  include <deal.II/base/utilities.h>
 
 #  include <deal.II/dofs/dof_accessor.h>
@@ -103,10 +104,8 @@ namespace CUDAWrappers
 
     namespace internal
     {
-      // TODO: use a template parameter instead of a macro
-#  define DEAL_II_MAX_ELEM_DEGREE 10
-      __constant__ double constraint_weights[(DEAL_II_MAX_ELEM_DEGREE + 1) *
-                                             (DEAL_II_MAX_ELEM_DEGREE + 1)];
+      __constant__ double
+        constraint_weights[(mf_max_elem_degree + 1) * (mf_max_elem_degree + 1)];
 
       // Here is the system for how we store constraint types in a binary mask.
       // This is not a complete contradiction-free system, i.e., there are
@@ -141,25 +140,31 @@ namespace CUDAWrappers
       void
       setup_constraint_weigths(unsigned int fe_degree)
       {
+        const unsigned int face_no =
+          0; // we assume that all faces have the same number of dofs
+
         FE_Q<2>            fe_q(fe_degree);
-        FullMatrix<double> interpolation_matrix(fe_q.dofs_per_face,
-                                                fe_q.dofs_per_face);
-        fe_q.get_subface_interpolation_matrix(fe_q, 0, interpolation_matrix);
+        FullMatrix<double> interpolation_matrix(fe_q.n_dofs_per_face(face_no),
+                                                fe_q.n_dofs_per_face(face_no));
+        fe_q.get_subface_interpolation_matrix(fe_q,
+                                              0,
+                                              interpolation_matrix,
+                                              face_no);
 
         std::vector<unsigned int> mapping =
-          FETools::lexicographic_to_hierarchic_numbering<1>(FE_Q<1>(fe_degree));
+          FETools::lexicographic_to_hierarchic_numbering<1>(fe_degree);
 
-        FullMatrix<double> mapped_matrix(fe_q.dofs_per_face,
-                                         fe_q.dofs_per_face);
-        for (unsigned int i = 0; i < fe_q.dofs_per_face; ++i)
-          for (unsigned int j = 0; j < fe_q.dofs_per_face; ++j)
+        FullMatrix<double> mapped_matrix(fe_q.n_dofs_per_face(face_no),
+                                         fe_q.n_dofs_per_face(face_no));
+        for (unsigned int i = 0; i < fe_q.n_dofs_per_face(face_no); ++i)
+          for (unsigned int j = 0; j < fe_q.n_dofs_per_face(face_no); ++j)
             mapped_matrix(i, j) = interpolation_matrix(mapping[i], mapping[j]);
 
         cudaError_t error_code =
           cudaMemcpyToSymbol(internal::constraint_weights,
                              &mapped_matrix[0][0],
-                             sizeof(double) * fe_q.dofs_per_face *
-                               fe_q.dofs_per_face);
+                             sizeof(double) * fe_q.n_dofs_per_face(face_no) *
+                               fe_q.n_dofs_per_face(face_no));
         AssertCuda(error_code);
       }
     } // namespace internal
@@ -167,7 +172,7 @@ namespace CUDAWrappers
 
 
     template <int dim>
-    HangingNodes<dim>::HangingNodes(
+    inline HangingNodes<dim>::HangingNodes(
       unsigned int                     fe_degree,
       const DoFHandler<dim> &          dof_handler,
       const std::vector<unsigned int> &lexicographic_mapping)
@@ -186,14 +191,14 @@ namespace CUDAWrappers
 
 
     template <int dim>
-    void
+    inline void
     HangingNodes<dim>::setup_line_to_cell()
     {}
 
 
 
     template <>
-    void
+    inline void
     HangingNodes<3>::setup_line_to_cell()
     {
       // In 3D, we can have DoFs on only an edge being constrained (e.g. in a
@@ -225,7 +230,7 @@ namespace CUDAWrappers
                ++line)
             {
               const unsigned int line_idx = cell->line(line)->index();
-              if (cell->active())
+              if (cell->is_active())
                 line_to_cells[line_idx].push_back(std::make_pair(cell, line));
               else
                 line_to_inactive_cells[line_idx].push_back(
@@ -267,7 +272,7 @@ namespace CUDAWrappers
 
     template <int dim>
     template <typename CellIterator>
-    void
+    inline void
     HangingNodes<dim>::setup_constraints(
       std::vector<types::global_dof_index> &                    dof_indices,
       const CellIterator &                                      cell,
@@ -282,11 +287,9 @@ namespace CUDAWrappers
       std::vector<types::global_dof_index> neighbor_dofs(dofs_per_face);
 
       const auto lex_face_mapping =
-        FETools::lexicographic_to_hierarchic_numbering<dim - 1>(
-          FE_Q<dim - 1>(fe_degree));
+        FETools::lexicographic_to_hierarchic_numbering<dim - 1>(fe_degree);
 
-      for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell;
-           ++face)
+      for (const unsigned int face : GeometryInfo<dim>::face_indices())
         {
           if ((!cell->at_boundary(face)) &&
               (cell->neighbor(face)->has_children() == false))
@@ -587,7 +590,7 @@ namespace CUDAWrappers
 
 
     template <int dim>
-    void
+    inline void
     HangingNodes<dim>::rotate_subface_index(int           times,
                                             unsigned int &subface_index) const
     {
@@ -602,7 +605,7 @@ namespace CUDAWrappers
 
 
     template <int dim>
-    void
+    inline void
     HangingNodes<dim>::rotate_face(
       int                                   times,
       unsigned int                          n_dofs_1d,
@@ -651,7 +654,7 @@ namespace CUDAWrappers
 
 
     template <int dim>
-    unsigned int
+    inline unsigned int
     HangingNodes<dim>::line_dof_idx(int          local_line,
                                     unsigned int dof,
                                     unsigned int n_dofs_1d) const
@@ -679,7 +682,7 @@ namespace CUDAWrappers
 
 
     template <int dim>
-    void
+    inline void
     HangingNodes<dim>::transpose_face(
       std::vector<types::global_dof_index> &dofs) const
     {

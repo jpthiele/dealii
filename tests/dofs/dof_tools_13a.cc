@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2003 - 2018 by the deal.II authors
+// Copyright (C) 2003 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -17,8 +17,8 @@
 #include <deal.II/lac/vector.h>
 
 #include "../tests.h"
+
 #include "dof_tools_common.h"
-#include "dof_tools_common_fake_hp.h"
 
 // check
 //   DoFTools::distribute_cell_to_dof_vector
@@ -31,9 +31,9 @@
 
 
 
-template <typename DoFHandlerType>
+template <int dim>
 void
-check_this(const DoFHandlerType &dof_handler)
+check_this(const DoFHandler<dim> &dof_handler)
 {
   // this doesn't make much sense if
   // the element is not primitive
@@ -47,22 +47,16 @@ check_this(const DoFHandlerType &dof_handler)
   // distribute to first component
   Vector<double> dof_data(dof_handler.n_dofs());
 
-  // preset the vector to make sure
-  // that the function zeroes out
-  // previous content. however, only
-  // touch those elements that we
-  // will actually use
-  std::vector<bool> component_dofs(dof_handler.n_dofs());
+  IndexSet component_dofs;
   {
     std::vector<bool> component_mask(dof_handler.get_fe().n_components(),
                                      false);
     component_mask[0] = true;
-    DoFTools::extract_dofs(dof_handler,
-                           ComponentMask(component_mask),
-                           component_dofs);
+    component_dofs =
+      DoFTools::extract_dofs(dof_handler, ComponentMask(component_mask));
 
     for (unsigned int i = 0; i < dof_data.size(); ++i)
-      if (component_dofs[i] == true)
+      if (component_dofs.is_element(i) == true)
         dof_data(i) = i + 1;
       else
         dof_data(i) = 0;
@@ -77,7 +71,7 @@ check_this(const DoFHandlerType &dof_handler)
   // check that no other values were
   // set
   for (unsigned int i = 0; i < dof_data.size(); ++i)
-    if (component_dofs[i] == false)
+    if (component_dofs.is_element(i) == false)
       AssertThrow(dof_data(i) == 0, ExcInternalError());
 
 
@@ -92,11 +86,10 @@ check_this(const DoFHandlerType &dof_handler)
     std::vector<bool> component_mask(dof_handler.get_fe().n_components(),
                                      false);
     component_mask.back() = true;
-    DoFTools::extract_dofs(dof_handler,
-                           ComponentMask(component_mask),
-                           component_dofs);
+    component_dofs =
+      DoFTools::extract_dofs(dof_handler, ComponentMask(component_mask));
     for (unsigned int i = 0; i < dof_data.size(); ++i)
-      if (component_dofs[i] == true)
+      if (component_dofs.is_element(i) == true)
         dof_data(i) = i + 1;
       else
         dof_data(i) = 0;
@@ -110,6 +103,6 @@ check_this(const DoFHandlerType &dof_handler)
   // check that no other values were
   // set
   for (unsigned int i = 0; i < dof_data.size(); ++i)
-    if (component_dofs[i] == false)
+    if (component_dofs.is_element(i) == false)
       AssertThrow(dof_data(i) == 0, ExcInternalError());
 }

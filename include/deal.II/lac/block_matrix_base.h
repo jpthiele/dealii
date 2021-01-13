@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2004 - 2019 by the deal.II authors
+// Copyright (C) 2004 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -50,8 +50,6 @@ class MatrixIterator;
 
 /**
  * Namespace in which iterators in block matrices are implemented.
- *
- * @author Wolfgang Bangerth, 2004
  */
 namespace BlockMatrixIterators
 {
@@ -289,7 +287,7 @@ namespace BlockMatrixIterators
 
 
 /**
- * Blocked matrix class. The behaviour of objects of this type is almost as
+ * Blocked matrix class. The behavior of objects of this type is almost as
  * for the usual matrix objects, with most of the functions being implemented
  * in both classes. The main difference is that the matrix represented by this
  * object is composed of an array of matrices (e.g. of type
@@ -346,7 +344,6 @@ namespace BlockMatrixIterators
  *
  * @see
  * @ref GlossBlockLA "Block (linear algebra)"
- * @author Wolfgang Bangerth, 2000, 2004
  */
 template <typename MatrixType>
 class BlockMatrixBase : public Subscriptor
@@ -1040,11 +1037,11 @@ private:
      * A mutex variable used to guard access to the member variables of this
      * structure;
      */
-    Threads::Mutex mutex;
+    std::mutex mutex;
 
     /**
      * Copy operator. This is needed because the default copy operator of this
-     * class is deleted (since Threads::Mutex is not copyable) and hence the
+     * class is deleted (since std::mutex is not copyable) and hence the
      * default copy operator of the enclosing class is also deleted.
      *
      * The implementation here simply does nothing -- TemporaryData objects
@@ -1570,8 +1567,8 @@ inline typename BlockMatrixBase<MatrixType>::BlockType &
 BlockMatrixBase<MatrixType>::block(const unsigned int row,
                                    const unsigned int column)
 {
-  Assert(row < n_block_rows(), ExcIndexRange(row, 0, n_block_rows()));
-  Assert(column < n_block_cols(), ExcIndexRange(column, 0, n_block_cols()));
+  AssertIndexRange(row, n_block_rows());
+  AssertIndexRange(column, n_block_cols());
 
   return *sub_objects[row][column];
 }
@@ -1583,8 +1580,8 @@ inline const typename BlockMatrixBase<MatrixType>::BlockType &
 BlockMatrixBase<MatrixType>::block(const unsigned int row,
                                    const unsigned int column) const
 {
-  Assert(row < n_block_rows(), ExcIndexRange(row, 0, n_block_rows()));
-  Assert(column < n_block_cols(), ExcIndexRange(column, 0, n_block_cols()));
+  AssertIndexRange(row, n_block_rows());
+  AssertIndexRange(column, n_block_cols());
 
   return *sub_objects[row][column];
 }
@@ -2543,7 +2540,7 @@ template <class MatrixType>
 inline typename BlockMatrixBase<MatrixType>::const_iterator
 BlockMatrixBase<MatrixType>::begin(const size_type r) const
 {
-  Assert(r < m(), ExcIndexRange(r, 0, m()));
+  AssertIndexRange(r, m());
   return const_iterator(this, r);
 }
 
@@ -2553,7 +2550,7 @@ template <class MatrixType>
 inline typename BlockMatrixBase<MatrixType>::const_iterator
 BlockMatrixBase<MatrixType>::end(const size_type r) const
 {
-  Assert(r < m(), ExcIndexRange(r, 0, m()));
+  AssertIndexRange(r, m());
   return const_iterator(this, r + 1);
 }
 
@@ -2581,7 +2578,7 @@ template <class MatrixType>
 inline typename BlockMatrixBase<MatrixType>::iterator
 BlockMatrixBase<MatrixType>::begin(const size_type r)
 {
-  Assert(r < m(), ExcIndexRange(r, 0, m()));
+  AssertIndexRange(r, m());
   return iterator(this, r);
 }
 
@@ -2591,7 +2588,7 @@ template <class MatrixType>
 inline typename BlockMatrixBase<MatrixType>::iterator
 BlockMatrixBase<MatrixType>::end(const size_type r)
 {
-  Assert(r < m(), ExcIndexRange(r, 0, m()));
+  AssertIndexRange(r, m());
   return iterator(this, r + 1);
 }
 

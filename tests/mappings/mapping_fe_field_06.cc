@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2019 by the deal.II authors
+// Copyright (C) 2019 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -98,10 +98,7 @@ test()
       level_vectors[level].update_ghost_values();
     }
 
-  MappingFEField<dim,
-                 spacedim,
-                 LinearAlgebra::distributed::Vector<double>,
-                 DoFHandler<dim>>
+  MappingFEField<dim, spacedim, LinearAlgebra::distributed::Vector<double>>
     mapping(dh, level_vectors);
 
   QGauss<dim>   quad(1);
@@ -159,7 +156,6 @@ test()
   deallog << "OK" << std::endl;
 }
 
-using namespace dealii;
 int
 main(int argc, char **argv)
 {

@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2004 - 2018 by the deal.II authors
+// Copyright (C) 2004 - 2019 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -16,10 +16,10 @@
 
 #include <deal.II/base/polynomials_abf.h>
 #include <deal.II/base/quadrature_lib.h>
-#include <deal.II/base/std_cxx14/memory.h>
 
 #include <iomanip>
 #include <iostream>
+#include <memory>
 
 
 DEAL_II_NAMESPACE_OPEN
@@ -112,12 +112,12 @@ PolynomialsABF<dim>::evaluate(
       for (unsigned int c = 0; c < dim; ++c)
         p(c) = unit_point((c + d) % dim);
 
-      polynomial_space.compute(p,
-                               p_values,
-                               p_grads,
-                               p_grad_grads,
-                               p_third_derivatives,
-                               p_fourth_derivatives);
+      polynomial_space.evaluate(p,
+                                p_values,
+                                p_grads,
+                                p_grad_grads,
+                                p_third_derivatives,
+                                p_fourth_derivatives);
 
       for (unsigned int i = 0; i < p_values.size(); ++i)
         values[i + d * n_sub][d] = p_values[i];
@@ -185,7 +185,7 @@ template <int dim>
 std::unique_ptr<TensorPolynomialsBase<dim>>
 PolynomialsABF<dim>::clone() const
 {
-  return std_cxx14::make_unique<PolynomialsABF<dim>>(*this);
+  return std::make_unique<PolynomialsABF<dim>>(*this);
 }
 
 

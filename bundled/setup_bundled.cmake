@@ -30,20 +30,31 @@ OPTION(DEAL_II_FORCE_BUNDLED_BOOST
 
 SET(BOOST_FOLDER "${CMAKE_SOURCE_DIR}/bundled/boost-1.70.0")
 
+#
+# Taskflow
+#
+
+SET(FEATURE_TASKFLOW_HAVE_BUNDLED TRUE)
+
+OPTION(DEAL_II_FORCE_BUNDLED_TASKFLOW
+  "Always use the bundled taskflow header library instead of an external one."
+  OFF)
+
+SET(TASKFLOW_FOLDER "${CMAKE_SOURCE_DIR}/bundled/taskflow-2.5.0")
+
 
 #
 # Threading Building Blocks library
 #
 
 IF( NOT CMAKE_SYSTEM_NAME MATCHES "CYGWIN"
-    AND NOT CMAKE_SYSTEM_NAME MATCHES "Windows"
-    AND NOT CMAKE_SYSTEM_PROCESSOR MATCHES "ia64" )
+    AND NOT CMAKE_SYSTEM_NAME MATCHES "Windows" )
   #
   # Cygwin is unsupported by tbb, Windows due to the way we compile tbb...
   #
-  SET(FEATURE_THREADS_HAVE_BUNDLED TRUE)
+  SET(FEATURE_TBB_HAVE_BUNDLED TRUE)
 
-  OPTION(DEAL_II_FORCE_BUNDLED_THREADS
+  OPTION(DEAL_II_FORCE_BUNDLED_TBB
     "Always use the bundled tbb library instead of an external one."
     OFF)
 

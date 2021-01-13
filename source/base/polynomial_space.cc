@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2002 - 2019 by the deal.II authors
+// Copyright (C) 2002 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -15,8 +15,9 @@
 
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/polynomial_space.h>
-#include <deal.II/base/std_cxx14/memory.h>
 #include <deal.II/base/table.h>
+
+#include <memory>
 
 DEAL_II_NAMESPACE_OPEN
 
@@ -47,7 +48,7 @@ template <>
 std::array<unsigned int, 1>
 PolynomialSpace<1>::compute_index(const unsigned int i) const
 {
-  Assert(i < index_map.size(), ExcIndexRange(i, 0, index_map.size()));
+  AssertIndexRange(i, index_map.size());
   return {{index_map[i]}};
 }
 
@@ -57,7 +58,7 @@ template <>
 std::array<unsigned int, 2>
 PolynomialSpace<2>::compute_index(const unsigned int i) const
 {
-  Assert(i < index_map.size(), ExcIndexRange(i, 0, index_map.size()));
+  AssertIndexRange(i, index_map.size());
   const unsigned int n = index_map[i];
   // there should be a better way to
   // write this function (not
@@ -83,7 +84,7 @@ template <>
 std::array<unsigned int, 3>
 PolynomialSpace<3>::compute_index(const unsigned int i) const
 {
-  Assert(i < index_map.size(), ExcIndexRange(i, 0, index_map.size()));
+  AssertIndexRange(i, index_map.size());
   const unsigned int n = index_map[i];
   // there should be a better way to
   // write this function (not
@@ -403,7 +404,7 @@ template <int dim>
 std::unique_ptr<ScalarPolynomialsBase<dim>>
 PolynomialSpace<dim>::clone() const
 {
-  return std_cxx14::make_unique<PolynomialSpace<dim>>(*this);
+  return std::make_unique<PolynomialSpace<dim>>(*this);
 }
 
 

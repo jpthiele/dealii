@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2004 - 2018 by the deal.II authors
+// Copyright (C) 2004 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -15,7 +15,8 @@
 
 
 #include <deal.II/base/polynomials_bernardi_raugel.h>
-#include <deal.II/base/std_cxx14/memory.h>
+
+#include <memory>
 
 DEAL_II_NAMESPACE_OPEN
 
@@ -120,7 +121,7 @@ PolynomialsBernardiRaugel<dim>::evaluate(
   // Normal vectors point in the +x, +y, and +z directions for
   // consistent orientation across edges
   std::vector<Tensor<1, dim>> normals;
-  for (unsigned int i = 0; i < GeometryInfo<dim>::faces_per_cell; ++i)
+  for (unsigned int i : GeometryInfo<dim>::face_indices())
     {
       Tensor<1, dim> normal;
       normal[i / 2] = 1;
@@ -137,7 +138,7 @@ PolynomialsBernardiRaugel<dim>::evaluate(
     }
 
   // set indices for the anisotropic polynomials to find
-  // them after polynomial_space_bubble.compute is called
+  // them after polynomial_space_bubble.evaluate is called
   std::vector<int> aniso_indices;
   if (dim == 2)
     {
@@ -156,18 +157,18 @@ PolynomialsBernardiRaugel<dim>::evaluate(
       aniso_indices.push_back(17);
     }
 
-  polynomial_space_bubble.compute(unit_point,
-                                  bubble_values,
-                                  bubble_grads,
-                                  bubble_grad_grads,
-                                  bubble_third_derivatives,
-                                  bubble_fourth_derivatives);
-  polynomial_space_Q.compute(unit_point,
-                             Q_values,
-                             Q_grads,
-                             Q_grad_grads,
-                             Q_third_derivatives,
-                             Q_fourth_derivatives);
+  polynomial_space_bubble.evaluate(unit_point,
+                                   bubble_values,
+                                   bubble_grads,
+                                   bubble_grad_grads,
+                                   bubble_third_derivatives,
+                                   bubble_fourth_derivatives);
+  polynomial_space_Q.evaluate(unit_point,
+                              Q_values,
+                              Q_grads,
+                              Q_grad_grads,
+                              Q_third_derivatives,
+                              Q_fourth_derivatives);
 
   // first dim*vertices_per_cell functions are Q_1^2 functions
   for (unsigned int i = 0; i < dim * GeometryInfo<dim>::vertices_per_cell; ++i)
@@ -254,7 +255,7 @@ template <int dim>
 std::unique_ptr<TensorPolynomialsBase<dim>>
 PolynomialsBernardiRaugel<dim>::clone() const
 {
-  return std_cxx14::make_unique<PolynomialsBernardiRaugel<dim>>(*this);
+  return std::make_unique<PolynomialsBernardiRaugel<dim>>(*this);
 }
 
 template class PolynomialsBernardiRaugel<1>; // to prevent errors

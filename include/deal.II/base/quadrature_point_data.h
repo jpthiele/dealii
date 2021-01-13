@@ -57,8 +57,6 @@ DEAL_II_NAMESPACE_OPEN
  * However, within the cell this class stores a vector of objects of a single
  * data type. For this reason, this class may not be sufficiently flexible when,
  * for example, adopting a level-set approach to describe material behavior.
- *
- * @author Denis Davydov, Jean-Paul Pelteret, 2016
  */
 template <typename CellIteratorType, typename DataType>
 class CellDataStorage : public Subscriptor
@@ -273,8 +271,6 @@ private:
  *
  * To store and access instances of classes derived from this class, see the
  * CellDataStorage class.
- *
- * @author Denis Davydov, Jean-Paul Pelteret, 2016
  */
 class TransferableQuadraturePointData
 {
@@ -436,8 +432,6 @@ namespace parallel
      * yield over and undershoots that, once evaluated at a different set of
      * quadrature points (on child or parent cells) results in values that will
      * not make much sense.
-     *
-     * @author Denis Davydov, Jean-Paul Pelteret, 2016
      */
     template <int dim, typename DataType>
     class ContinuousQuadratureDataTransfer
@@ -903,8 +897,8 @@ namespace parallel
           std::unique_ptr<const FiniteElement<dim>>(projection_fe_.clone()))
       , data_size_in_bytes(0)
       , n_q_points(rhs_quadrature.size())
-      , project_to_fe_matrix(projection_fe->dofs_per_cell, n_q_points)
-      , project_to_qp_matrix(n_q_points, projection_fe->dofs_per_cell)
+      , project_to_fe_matrix(projection_fe->n_dofs_per_cell(), n_q_points)
+      , project_to_qp_matrix(n_q_points, projection_fe->n_dofs_per_cell())
       , handle(numbers::invalid_unsigned_int)
       , data_storage(nullptr)
       , triangulation(nullptr)
@@ -939,11 +933,11 @@ namespace parallel
       data_storage  = &data_storage_;
 
       handle = triangulation->register_data_attach(
-        std::bind(
-          &ContinuousQuadratureDataTransfer<dim, DataType>::pack_function,
-          this,
-          std::placeholders::_1,
-          std::placeholders::_2),
+        [this](
+          const typename parallel::distributed::Triangulation<
+            dim>::cell_iterator &cell,
+          const typename parallel::distributed::Triangulation<dim>::CellStatus
+            status) { return this->pack_function(cell, status); },
         /*returns_variable_size_data=*/true);
     }
 
@@ -955,12 +949,13 @@ namespace parallel
     {
       triangulation->notify_ready_to_unpack(
         handle,
-        std::bind(
-          &ContinuousQuadratureDataTransfer<dim, DataType>::unpack_function,
-          this,
-          std::placeholders::_1,
-          std::placeholders::_2,
-          std::placeholders::_3));
+        [this](
+          const typename parallel::distributed::Triangulation<
+            dim>::cell_iterator &cell,
+          const typename parallel::distributed::Triangulation<dim>::CellStatus
+            status,
+          const boost::iterator_range<std::vector<char>::const_iterator>
+            &data_range) { this->unpack_function(cell, status, data_range); });
 
       // invalidate the pointers
       data_storage  = nullptr;
@@ -1019,7 +1014,7 @@ namespace parallel
         {
           // we need to first use prolongation matrix to get dofvalues on child
           // cells based on dofvalues stored in the parent's data_store
-          matrix_dofs_child.reinit(projection_fe->dofs_per_cell,
+          matrix_dofs_child.reinit(projection_fe->n_dofs_per_cell(),
                                    number_of_values);
           for (unsigned int child = 0; child < cell->n_children(); ++child)
             if (cell->child(child)->is_locally_owned())

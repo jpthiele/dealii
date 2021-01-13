@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2004 - 2018 by the deal.II authors
+// Copyright (C) 2004 - 2019 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -16,6 +16,8 @@
 
 #ifndef dealii_polynomials_bernardi_raugel_h
 #define dealii_polynomials_bernardi_raugel_h
+
+#include <deal.II/base/config.h>
 
 #include <deal.II/base/geometry_info.h>
 #include <deal.II/base/point.h>
@@ -78,8 +80,6 @@ DEAL_II_NAMESPACE_OPEN
  *
  *
  * @ingroup Polynomials
- * @author Graham Harper
- * @date 2018
  */
 template <int dim>
 class PolynomialsBernardiRaugel : public TensorPolynomialsBase<dim>
@@ -129,7 +129,7 @@ public:
   n_polynomials(const unsigned int k);
 
   /**
-   * @copydoc TensorPolynomialsBase<dim>::clone()
+   * @copydoc TensorPolynomialsBase::clone()
    */
   virtual std::unique_ptr<TensorPolynomialsBase<dim>>
   clone() const override;

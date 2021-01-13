@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2013 - 2018 by the deal.II authors
+// Copyright (C) 2013 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -23,7 +23,6 @@
 #include "../tests.h"
 
 
-using namespace dealii;
 
 Triangulation<2, 2>
 create_grid()
@@ -48,7 +47,7 @@ create_grid()
 
   for (; cell != endc; ++cell)
     {
-      for (unsigned int v = 0; v < GeometryInfo<2>::vertices_per_cell; ++v)
+      for (const unsigned int v : GeometryInfo<2>::vertex_indices())
         {
           const double distance_from_center = center.distance(cell->vertex(v));
 

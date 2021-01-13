@@ -121,10 +121,6 @@ namespace Step41
   class RightHandSide : public Function<dim>
   {
   public:
-    RightHandSide()
-      : Function<dim>()
-    {}
-
     virtual double value(const Point<dim> & /*p*/,
                          const unsigned int component = 0) const override
     {
@@ -141,10 +137,6 @@ namespace Step41
   class BoundaryValues : public Function<dim>
   {
   public:
-    BoundaryValues()
-      : Function<dim>()
-    {}
-
     virtual double value(const Point<dim> & /*p*/,
                          const unsigned int component = 0) const override
     {
@@ -163,10 +155,6 @@ namespace Step41
   class Obstacle : public Function<dim>
   {
   public:
-    Obstacle()
-      : Function<dim>()
-    {}
-
     virtual double value(const Point<dim> & p,
                          const unsigned int component = 0) const override
     {
@@ -280,15 +268,15 @@ namespace Step41
     system_matrix = 0;
     system_rhs    = 0;
 
-    const QGauss<dim>        quadrature_formula(fe.degree + 1);
-    const RightHandSide<dim> right_hand_side;
+    const QGauss<dim>  quadrature_formula(fe.degree + 1);
+    RightHandSide<dim> right_hand_side;
 
     FEValues<dim> fe_values(fe,
                             quadrature_formula,
                             update_values | update_gradients |
                               update_quadrature_points | update_JxW_values);
 
-    const unsigned int dofs_per_cell = fe.dofs_per_cell;
+    const unsigned int dofs_per_cell = fe.n_dofs_per_cell();
     const unsigned int n_q_points    = quadrature_formula.size();
 
     FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
@@ -357,12 +345,12 @@ namespace Step41
   {
     Assert(fe.degree == 1, ExcNotImplemented());
 
-    const QTrapez<dim> quadrature_formula;
-    FEValues<dim>      fe_values(fe,
+    const QTrapezoid<dim> quadrature_formula;
+    FEValues<dim>         fe_values(fe,
                             quadrature_formula,
                             update_values | update_JxW_values);
 
-    const unsigned int dofs_per_cell = fe.dofs_per_cell;
+    const unsigned int dofs_per_cell = fe.n_dofs_per_cell();
     const unsigned int n_q_points    = quadrature_formula.size();
 
     FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
@@ -455,10 +443,9 @@ namespace Step41
     std::vector<bool>   dof_touched(dof_handler.n_dofs(), false);
 
     for (const auto &cell : dof_handler.active_cell_iterators())
-      for (unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
+      for (const auto v : cell->vertex_indices())
         {
-          Assert(dof_handler.get_fe().dofs_per_cell ==
-                   GeometryInfo<dim>::vertices_per_cell,
+          Assert(dof_handler.get_fe().n_dofs_per_cell() == cell->n_vertices(),
                  ExcNotImplemented());
 
           const unsigned int dof_index = cell->vertex_dof_index(v, 0);

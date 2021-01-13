@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2010 - 2018 by the deal.II authors
+// Copyright (C) 2010 - 2019 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -16,6 +16,8 @@
 
 #ifndef dealii_newton_h
 #define dealii_newton_h
+
+#include <deal.II/base/config.h>
 
 #include <deal.II/algorithms/any_data.h>
 #include <deal.II/algorithms/operator.h>
@@ -65,8 +67,6 @@ namespace Algorithms
    *
    * For the call to (*#inverse_derivative), the vector <tt>"Newton
    * residual"</tt> is inserted before <tt>"Newton iterate"</tt>.
-   *
-   * @author Guido Kanschat, 2006, 2010
    */
   template <typename VectorType>
   class Newton : public OperatorBase

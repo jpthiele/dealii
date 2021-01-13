@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 1999 - 2019 by the deal.II authors
+// Copyright (C) 1999 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -490,8 +490,6 @@ namespace SparseMatrixIterators
  * in the manual).
  *
  * @ingroup Matrix1
- * @author Essentially everyone who has ever worked on deal.II
- * @date 1994-2013
  */
 template <typename number>
 class SparseMatrix : public virtual Subscriptor
@@ -2417,7 +2415,7 @@ template <typename number>
 inline typename SparseMatrix<number>::const_iterator
 SparseMatrix<number>::begin(const size_type r) const
 {
-  Assert(r < m(), ExcIndexRange(r, 0, m()));
+  AssertIndexRange(r, m());
 
   return const_iterator(this, cols->rowstart[r]);
 }
@@ -2428,7 +2426,7 @@ template <typename number>
 inline typename SparseMatrix<number>::const_iterator
 SparseMatrix<number>::end(const size_type r) const
 {
-  Assert(r < m(), ExcIndexRange(r, 0, m()));
+  AssertIndexRange(r, m());
 
   return const_iterator(this, cols->rowstart[r + 1]);
 }
@@ -2439,7 +2437,7 @@ template <typename number>
 inline typename SparseMatrix<number>::iterator
 SparseMatrix<number>::begin(const size_type r)
 {
-  Assert(r < m(), ExcIndexRange(r, 0, m()));
+  AssertIndexRange(r, m());
 
   return iterator(this, cols->rowstart[r]);
 }
@@ -2450,7 +2448,7 @@ template <typename number>
 inline typename SparseMatrix<number>::iterator
 SparseMatrix<number>::end(const size_type r)
 {
-  Assert(r < m(), ExcIndexRange(r, 0, m()));
+  AssertIndexRange(r, m());
 
   return iterator(this, cols->rowstart[r + 1]);
 }

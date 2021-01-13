@@ -1,6 +1,6 @@
 /* ---------------------------------------------------------------------
  *
- * Copyright (C) 2012 - 2019 by the deal.II authors
+ * Copyright (C) 2012 - 2020 by the deal.II authors
  *
  * This file is part of the deal.II library.
  *
@@ -140,10 +140,6 @@ namespace Step15
   class BoundaryValues : public Function<dim>
   {
   public:
-    BoundaryValues()
-      : Function<dim>()
-    {}
-
     virtual double value(const Point<dim> & p,
                          const unsigned int component = 0) const override;
   };
@@ -244,7 +240,7 @@ namespace Step15
                             update_gradients | update_quadrature_points |
                               update_JxW_values);
 
-    const unsigned int dofs_per_cell = fe.dofs_per_cell;
+    const unsigned int dofs_per_cell = fe.n_dofs_per_cell();
     const unsigned int n_q_points    = quadrature_formula.size();
 
     FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
@@ -347,11 +343,11 @@ namespace Step15
   template <int dim>
   void MinimalSurfaceProblem<dim>::solve()
   {
-    SolverControl solver_control(system_rhs.size(),
+    SolverControl            solver_control(system_rhs.size(),
                                  system_rhs.l2_norm() * 1e-6);
-    SolverCG<>    solver(solver_control);
+    SolverCG<Vector<double>> solver(solver_control);
 
-    PreconditionSSOR<> preconditioner;
+    PreconditionSSOR<SparseMatrix<double>> preconditioner;
     preconditioner.initialize(system_matrix, 1.2);
 
     solver.solve(system_matrix, newton_update, system_rhs, preconditioner);
@@ -510,7 +506,7 @@ namespace Step15
                             update_gradients | update_quadrature_points |
                               update_JxW_values);
 
-    const unsigned int dofs_per_cell = fe.dofs_per_cell;
+    const unsigned int dofs_per_cell = fe.n_dofs_per_cell();
     const unsigned int n_q_points    = quadrature_formula.size();
 
     Vector<double>              cell_residual(dofs_per_cell);
@@ -700,7 +696,6 @@ int main()
 {
   try
     {
-      using namespace dealii;
       using namespace Step15;
 
       MinimalSurfaceProblem<2> laplace_problem_2d;

@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2008 - 2019 by the deal.II authors
+// Copyright (C) 2008 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -58,9 +58,6 @@ namespace ChunkSparsityPatternIterators
    * Note that this class only allows read access to elements, providing their
    * row and column number. It does not allow modifying the sparsity pattern
    * itself.
-   *
-   * @author Martin Kronbichler
-   * @date 2013
    */
   class Accessor
   {
@@ -241,8 +238,6 @@ namespace ChunkSparsityPatternIterators
  * It uses the compressed row storage (CSR) format to store data.
  *
  * The use of this class is demonstrated in step-51.
- *
- * @author Wolfgang Bangerth, 2008
  */
 class ChunkSparsityPattern : public Subscriptor
 {
@@ -1123,7 +1118,7 @@ ChunkSparsityPattern::end() const
 inline ChunkSparsityPattern::iterator
 ChunkSparsityPattern::begin(const size_type r) const
 {
-  Assert(r < n_rows(), ExcIndexRange(r, 0, n_rows()));
+  AssertIndexRange(r, n_rows());
   return {this, r};
 }
 
@@ -1132,7 +1127,7 @@ ChunkSparsityPattern::begin(const size_type r) const
 inline ChunkSparsityPattern::iterator
 ChunkSparsityPattern::end(const size_type r) const
 {
-  Assert(r < n_rows(), ExcIndexRange(r, 0, n_rows()));
+  AssertIndexRange(r, n_rows());
   return {this, r + 1};
 }
 

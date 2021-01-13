@@ -1,6 +1,6 @@
 ## ---------------------------------------------------------------------
 ##
-## Copyright (C) 2013 - 2018 by the deal.II authors
+## Copyright (C) 2013 - 2020 by the deal.II authors
 ##
 ## This file is part of the deal.II library.
 ##
@@ -82,10 +82,18 @@ MACRO(DEAL_II_PICKUP_TESTS)
   #
   # Necessary external interpreters and programs:
   #
+  IF(${DEAL_II_WITH_MPI})
+    IF("${DEAL_II_MPIEXEC}" STREQUAL "" OR
+       "${DEAL_II_MPIEXEC}" STREQUAL "MPIEXEC_EXECUTABLE-NOTFOUND")
+      MESSAGE(FATAL_ERROR "Could not find an MPI launcher program, which is required "
+"for running the testsuite. Please explicitly specify MPIEXEC_EXECUTABLE to CMake "
+"as a full path to the MPI launcher program.")
+    ENDIF()
+  ENDIF()
 
   IF(DEAL_II_WITH_CUDA)
     FIND_PACKAGE(CUDA)
-    SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -std=c++11 -arch=sm_35 -Xcompiler ${OpenMP_CXX_FLAGS})
+    SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -std=c++14 -arch=sm_35 -Xcompiler ${OpenMP_CXX_FLAGS})
   ENDIF()
 
   FIND_PACKAGE(Perl REQUIRED)
@@ -175,7 +183,12 @@ MACRO(DEAL_II_PICKUP_TESTS)
   ENABLE_TESTING()
 
   SET_IF_EMPTY(TEST_PICKUP_REGEX "$ENV{TEST_PICKUP_REGEX}")
-  GET_FILENAME_COMPONENT(_category ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+
+  IF("${ARGN}" STREQUAL "")
+    GET_FILENAME_COMPONENT(_category ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+  ELSE()
+    SET(_category "${ARGN}")
+  ENDIF()
 
   SET(DEAL_II_SOURCE_DIR) # avoid a bogus warning
 
@@ -188,8 +201,13 @@ MACRO(DEAL_II_PICKUP_TESTS)
     # Respect TEST_PICKUP_REGEX:
     #
 
+    #
+    # Only retain the base name of the test, i.e., remove everything after
+    # (and including) the first period ("."):
+    #
+    STRING(REGEX REPLACE "\\..*$" "" _regex_name "${_category}/${_test}")
     IF( "${TEST_PICKUP_REGEX}" STREQUAL "" OR
-        "${_category}/${_test}" MATCHES "${TEST_PICKUP_REGEX}" )
+        "${_regex_name}" MATCHES "${TEST_PICKUP_REGEX}" )
       SET(_define_test TRUE)
     ELSE()
       SET(_define_test FALSE)

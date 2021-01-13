@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2003 - 2019 by the deal.II authors
+// Copyright (C) 2003 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -23,29 +23,18 @@ DEAL_II_NAMESPACE_OPEN
 namespace hp
 {
   template <int dim, int spacedim>
-  unsigned int
-  FECollection<dim, spacedim>::find_least_face_dominating_fe(
-    const std::set<unsigned int> &fes) const
-  {
-    return find_dominated_fe(find_common_fes(fes, /*codim*/ 1),
-                             /*codim*/ 1);
-  }
-
-
-
-  template <int dim, int spacedim>
   std::set<unsigned int>
   FECollection<dim, spacedim>::find_common_fes(
     const std::set<unsigned int> &fes,
     const unsigned int            codim) const
   {
+#ifdef DEBUG
     // Validate user inputs.
     Assert(codim <= dim, ExcImpossibleInDim(dim));
+    Assert(size() > 0, ExcEmptyObject());
     for (const auto &fe : fes)
-      {
-        (void)fe;
-        AssertIndexRange(fe, finite_elements.size());
-      }
+      AssertIndexRange(fe, finite_elements.size());
+#endif
 
     // Check if any element of this FECollection is able to dominate all
     // elements of @p fes. If one was found, we add it to the set of
@@ -79,13 +68,13 @@ namespace hp
     const std::set<unsigned int> &fes,
     const unsigned int            codim) const
   {
+#ifdef DEBUG
     // Validate user inputs.
     Assert(codim <= dim, ExcImpossibleInDim(dim));
+    Assert(size() > 0, ExcEmptyObject());
     for (const auto &fe : fes)
-      {
-        (void)fe;
-        AssertIndexRange(fe, finite_elements.size());
-      }
+      AssertIndexRange(fe, finite_elements.size());
+#endif
 
     // Check if any element of this FECollection is dominated by all
     // elements of @p fes. If one was found, we add it to the set of
@@ -119,18 +108,18 @@ namespace hp
     const std::set<unsigned int> &fes,
     const unsigned int            codim) const
   {
-    // Validate user inputs.
-    Assert(codim <= dim, ExcImpossibleInDim(dim));
-    for (const auto &fe : fes)
-      {
-        (void)fe;
-        AssertIndexRange(fe, finite_elements.size());
-      }
-
     // If the set of elements contains only a single element,
     // then this very element is considered to be the dominating one.
     if (fes.size() == 1)
       return *fes.begin();
+
+#ifdef DEBUG
+    // Validate user inputs.
+    Assert(codim <= dim, ExcImpossibleInDim(dim));
+    Assert(size() > 0, ExcEmptyObject());
+    for (const auto &fe : fes)
+      AssertIndexRange(fe, finite_elements.size());
+#endif
 
     // There may also be others, in which case we'll check if any of these
     // elements is able to dominate all others. If one was found, we stop
@@ -165,18 +154,18 @@ namespace hp
     const std::set<unsigned int> &fes,
     const unsigned int            codim) const
   {
-    // Validate user inputs.
-    Assert(codim <= dim, ExcImpossibleInDim(dim));
-    for (const auto &fe : fes)
-      {
-        (void)fe;
-        AssertIndexRange(fe, finite_elements.size());
-      }
-
     // If the set of elements contains only a single element,
     // then this very element is considered to be the dominated one.
     if (fes.size() == 1)
       return *fes.begin();
+
+#ifdef DEBUG
+    // Validate user inputs.
+    Assert(codim <= dim, ExcImpossibleInDim(dim));
+    Assert(size() > 0, ExcEmptyObject());
+    for (const auto &fe : fes)
+      AssertIndexRange(fe, finite_elements.size());
+#endif
 
     // There may also be others, in which case we'll check if any of these
     // elements is dominated by all others. If one was found, we stop
@@ -330,10 +319,10 @@ namespace hp
   FECollection<dim, spacedim>::next_in_hierarchy(
     const unsigned int fe_index) const
   {
-    Assert(fe_index < size(), ExcIndexRange(fe_index, 0, size()));
+    AssertIndexRange(fe_index, size());
 
     const unsigned int new_fe_index = hierarchy_next(*this, fe_index);
-    Assert(new_fe_index < size(), ExcIndexRange(new_fe_index, 0, size()));
+    AssertIndexRange(new_fe_index, size());
 
     return new_fe_index;
   }
@@ -345,10 +334,10 @@ namespace hp
   FECollection<dim, spacedim>::previous_in_hierarchy(
     const unsigned int fe_index) const
   {
-    Assert(fe_index < size(), ExcIndexRange(fe_index, 0, size()));
+    AssertIndexRange(fe_index, size());
 
     const unsigned int new_fe_index = hierarchy_prev(*this, fe_index);
-    Assert(new_fe_index < size(), ExcIndexRange(new_fe_index, 0, size()));
+    AssertIndexRange(new_fe_index, size());
 
     return new_fe_index;
   }

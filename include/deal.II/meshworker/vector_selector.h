@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2009 - 2018 by the deal.II authors
+// Copyright (C) 2009 - 2019 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -15,6 +15,8 @@
 
 #ifndef dealii_mesh_worker_vector_selector_h
 #define dealii_mesh_worker_vector_selector_h
+
+#include <deal.II/base/config.h>
 
 #include <deal.II/algorithms/any_data.h>
 #include <deal.II/algorithms/named_selection.h>
@@ -45,7 +47,6 @@ namespace MeshWorker
    * derivatives or second derivatives are actually computed.
    *
    * @ingroup MeshWorker
-   * @author Guido Kanschat 2009
    */
   class VectorSelector : public Subscriptor
   {
@@ -188,7 +189,6 @@ namespace MeshWorker
    * compute values of source vectors in quadrature points.
    *
    * @ingroup MeshWorker
-   * @author Guido Kanschat, 2009
    */
   template <int dim, int spacedim = dim, typename Number = double>
   class VectorDataBase : public VectorSelector
@@ -301,7 +301,6 @@ namespace MeshWorker
    * identify vectors by name.
    *
    * @ingroup MeshWorker
-   * @author Guido Kanschat, 2009
    */
   template <typename VectorType, int dim, int spacedim = dim>
   class VectorData
@@ -382,7 +381,6 @@ namespace MeshWorker
    * AnyData to identify vectors by name.
    *
    * @ingroup MeshWorker
-   * @author Guido Kanschat, 2010
    */
   template <typename VectorType, int dim, int spacedim = dim>
   class MGVectorData : public VectorData<VectorType, dim, spacedim>

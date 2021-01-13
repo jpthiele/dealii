@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2002 - 2019 by the deal.II authors
+// Copyright (C) 2002 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -69,8 +69,6 @@ namespace internal
    * should use explicitly in your programs (except, of course, through access
    * to the elements of tables with <tt>operator[]</tt>, which generates
    * temporary objects of the types of this namespace).
-   *
-   * @author Wolfgang Bangerth, 2002
    */
   namespace TableBaseAccessors
   {
@@ -157,8 +155,6 @@ namespace internal
      * objects of this class, as they are only thought as temporaries for
      * access to elements of the table class, not for passing them around as
      * arguments of functions, etc.
-     *
-     * @author Wolfgang Bangerth, 2002
      */
     template <int N, typename T, bool C, unsigned int P>
     class Accessor
@@ -224,10 +220,8 @@ namespace internal
       friend class dealii::Table;
       template <int N1, typename T1, bool C1, unsigned int P1>
       friend class Accessor;
-#ifndef DEAL_II_TEMPL_SPEC_FRIEND_BUG
       friend class dealii::Table<N, T>;
       friend class Accessor<N, T, C, P + 1>;
-#endif
     };
 
 
@@ -238,8 +232,6 @@ namespace internal
      * rather than recursively returning access objects for further subsets.
      * The same holds for this specialization as for the general template; see
      * there for more information.
-     *
-     * @author Wolfgang Bangerth, 2002
      */
     template <int N, typename T, bool C>
     class Accessor<N, T, C, 1>
@@ -331,10 +323,8 @@ namespace internal
       friend class dealii::Table;
       template <int N1, typename T1, bool C1, unsigned int P1>
       friend class Accessor;
-#ifndef DEAL_II_TEMPL_SPEC_FRIEND_BUG
       friend class dealii::Table<2, T>;
       friend class Accessor<N, T, C, 2>;
-#endif
     };
   } // namespace TableBaseAccessors
 
@@ -406,7 +396,6 @@ namespace internal
  * itself.
  *
  * @ingroup data
- * @author Wolfgang Bangerth, 2002.
  */
 template <int N, typename T>
 class TableBase : public Subscriptor
@@ -429,7 +418,7 @@ public:
    * Constructor. Initialize the array with the given dimensions in each index
    * component.
    */
-  TableBase(const TableIndices<N> &sizes);
+  explicit TableBase(const TableIndices<N> &sizes);
 
   /**
    * Constructor. Initialize the array with the given dimensions in each index
@@ -629,7 +618,8 @@ public:
 
   /**
    * Write or read the data of this object to or from a stream for the purpose
-   * of serialization.
+   * of serialization using the [BOOST serialization
+   * library](https://www.boost.org/doc/libs/1_74_0/libs/serialization/doc/index.html).
    */
   template <class Archive>
   void
@@ -693,7 +683,6 @@ protected:
  * See there, and in the documentation of the base class for more information.
  *
  * @ingroup data
- * @author Wolfgang Bangerth, 2002
  */
 template <int N, typename T>
 class Table : public TableBase<N, T>
@@ -710,7 +699,6 @@ class Table : public TableBase<N, T>
  * the base class.
  *
  * @ingroup data
- * @author Wolfgang Bangerth, 2002
  */
 template <typename T>
 class Table<1, T> : public TableBase<1, T>
@@ -729,7 +717,7 @@ public:
   /**
    * Constructor. Pass down the given dimension to the base class.
    */
-  Table(const size_type size);
+  explicit Table(const size_type size);
 
   /**
    * Constructor. Create a table with a given size and initialize it from a
@@ -910,6 +898,19 @@ namespace MatrixTableIterators
      */
     AccessorBase(const container_pointer_type table,
                  const std::ptrdiff_t         linear_index);
+
+    /**
+     * Comparison operator.
+     */
+    template <bool OtherConstness>
+    friend bool
+    operator==(
+      const AccessorBase<TableType, Constness, storage_order> &     left,
+      const AccessorBase<TableType, OtherConstness, storage_order> &right)
+    {
+      return left.container == right.container &&
+             left.linear_index == right.linear_index;
+    }
 
     /**
      * Get a constant reference to the value of the element represented by
@@ -1122,7 +1123,6 @@ namespace MatrixTableIterators
  * provided.
  *
  * @ingroup data
- * @author Wolfgang Bangerth, 2002
  */
 template <typename T>
 class Table<2, T> : public TableBase<2, T>
@@ -1254,7 +1254,6 @@ public:
   typename AlignedVector<T>::const_reference
   operator()(const size_type i, const size_type j) const;
 
-
   /**
    * Direct access to one element of the table by specifying all indices at
    * the same time. Range checks are performed.
@@ -1371,7 +1370,6 @@ protected:
  * the base class.
  *
  * @ingroup data
- * @author Wolfgang Bangerth, 2002
  */
 template <typename T>
 class Table<3, T> : public TableBase<3, T>
@@ -1503,7 +1501,6 @@ public:
  * the base class.
  *
  * @ingroup data
- * @author Wolfgang Bangerth, Ralf Hartmann 2002
  */
 template <typename T>
 class Table<4, T> : public TableBase<4, T>
@@ -1597,7 +1594,6 @@ public:
  * the base class.
  *
  * @ingroup data
- * @author Wolfgang Bangerth, Ralf Hartmann 2002
  */
 template <typename T>
 class Table<5, T> : public TableBase<5, T>
@@ -1694,7 +1690,6 @@ public:
  * the base class.
  *
  * @ingroup data
- * @author Wolfgang Bangerth, Ralf Hartmann 2002
  */
 template <typename T>
 class Table<6, T> : public TableBase<6, T>
@@ -1792,7 +1787,6 @@ public:
  * the base class.
  *
  * @ingroup data
- * @author Wolfgang Bangerth, 2002, Ralf Hartmann 2004
  */
 template <typename T>
 class Table<7, T> : public TableBase<7, T>
@@ -1886,36 +1880,6 @@ public:
 
 
 /**
- * A namespace for iterators for TransposeTable. TransposeTable is unique in
- * that it stores entries in column-major order.
- *
- * @warning The classes defined in this namespace have been deprecated in
- * favor of the more general versions in MatrixTableIterators. Use those
- * instead.
- */
-namespace TransposeTableIterators
-{
-  template <typename T, bool Constness>
-  using AccessorBase DEAL_II_DEPRECATED = MatrixTableIterators::AccessorBase<
-    TransposeTable<T>,
-    Constness,
-    MatrixTableIterators::Storage::column_major>;
-
-  template <typename T, bool Constness>
-  using Accessor DEAL_II_DEPRECATED =
-    MatrixTableIterators::Accessor<TransposeTable<T>,
-                                   Constness,
-                                   MatrixTableIterators::Storage::column_major>;
-
-  template <typename T, bool Constness>
-  using Iterator DEAL_II_DEPRECATED =
-    MatrixTableIterators::Iterator<TransposeTable<T>,
-                                   Constness,
-                                   MatrixTableIterators::Storage::column_major>;
-} // namespace TransposeTableIterators
-
-
-/**
  * A class representing a transpose two-dimensional table, i.e. a matrix of
  * objects (not necessarily only numbers) in column first numbering (FORTRAN
  * convention). The only real difference is therefore really in the storage
@@ -1926,7 +1890,6 @@ namespace TransposeTableIterators
  * TableBase.
  *
  * @ingroup data
- * @author Guido Kanschat, 2005
  */
 template <typename T>
 class TransposeTable : public TableBase<2, T>
@@ -2190,7 +2153,7 @@ namespace internal
     inline Accessor<N, T, C, P - 1> Accessor<N, T, C, P>::
                                     operator[](const size_type i) const
     {
-      Assert(i < table.size()[N - P], ExcIndexRange(i, 0, table.size()[N - P]));
+      AssertIndexRange(i, table.size()[N - P]);
 
       // access i-th
       // subobject. optimize on the
@@ -2301,7 +2264,7 @@ template <int N, typename T>
 inline TableBase<N, T> &
 TableBase<N, T>::operator=(TableBase<N, T> &&m) noexcept
 {
-  static_cast<Subscriptor &>(*this) = std::move(m);
+  static_cast<Subscriptor &>(*this) = std::move(static_cast<Subscriptor &>(m));
   values                            = std::move(m.values);
   table_size                        = m.table_size;
   m.table_size                      = TableIndices<N>();
@@ -2398,7 +2361,7 @@ template <int N, typename T>
 inline typename TableBase<N, T>::size_type
 TableBase<N, T>::size(const unsigned int i) const
 {
-  Assert(i < N, ExcIndexRange(i, 0, N));
+  AssertIndexRange(i, N);
   return table_size[i];
 }
 
@@ -3755,8 +3718,6 @@ Table<7, T>::operator()(const TableIndices<7> &indices)
  * Global function @p swap which overloads the default implementation of the
  * C++ standard library which uses a temporary object. The function simply
  * exchanges the data of the two tables.
- *
- * @author Martin Kronbichler, 2013
  */
 template <int N, typename T>
 inline void

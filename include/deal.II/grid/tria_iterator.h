@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 1998 - 2018 by the deal.II authors
+// Copyright (C) 1998 - 2019 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -167,11 +167,10 @@ class TriaActiveIterator;
  * add functionality.
  *
  * The accessors provided by the library consist of two groups, determined by
- * whether they access the data of Triangulation objects or
- * DoFHandler/hp::DoFHandler objects. They are derived from TriaAccessor and
- * DoFAccessor, respectively. Each group also has specialized accessors for
- * cells (as opposed to faces and lines) that offer more functionality such as
- * accessing neighbors.
+ * whether they access the data of Triangulation objects or DoFHandler objects.
+ * They are derived from TriaAccessor and DoFAccessor, respectively. Each group
+ * also has specialized accessors for cells (as opposed to faces and lines) that
+ * offer more functionality such as accessing neighbors.
  *
  * @attention It seems impossible to preserve constness of a triangulation
  * through iterator usage. Thus, if you declare pointers to a <tt>const</tt>
@@ -225,8 +224,6 @@ class TriaActiveIterator;
  * @ref Triangulation
  * @ingroup grid
  * @ingroup Iterators
- * @author Wolfgang Bangerth, 1998
- * @author documentation update Guido Kanschat, 2004
  */
 template <typename Accessor>
 class TriaRawIterator
@@ -379,8 +376,10 @@ public:
   /**
    * Compare for equality.
    */
-  bool
-  operator==(const TriaRawIterator &) const;
+  template <typename OtherAccessor = Accessor>
+  typename std::enable_if<std::is_convertible<OtherAccessor, Accessor>::value,
+                          bool>::type
+  operator==(const TriaRawIterator<OtherAccessor> &) const;
 
   /**
    * Compare for inequality.
@@ -1222,8 +1221,6 @@ inline TriaActiveIterator<Accessor>::TriaActiveIterator(
  * Print the address to which this iterator points to @p out. The address is
  * given by the pair <tt>(level,index)</tt>, where @p index is an index
  * relative to the level in which the object is that is pointed to.
- *
- * @author Wolfgang Bangerth, 1998
  */
 template <typename Accessor>
 inline std::ostream &
@@ -1239,8 +1236,6 @@ operator<<(std::ostream &out, const TriaRawIterator<Accessor> &i)
  * Print the address to which this iterator points to @p out. The address is
  * given by the pair <tt>(level,index)</tt>, where @p index is an index
  * relative to the level in which the object is that is pointed to.
- *
- * @author Wolfgang Bangerth, 1998
  */
 template <typename Accessor>
 inline std::ostream &
@@ -1256,8 +1251,6 @@ operator<<(std::ostream &out, const TriaIterator<Accessor> &i)
  * Print the address to which this iterator points to @p out. The address is
  * given by the pair <tt>(level,index)</tt>, where @p index is an index
  * relative to the level in which the object is that is pointed to.
- *
- * @author Wolfgang Bangerth, 1998
  */
 template <typename Accessor>
 inline std::ostream &

@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 1999 - 2019 by the deal.II authors
+// Copyright (C) 1999 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -47,6 +47,8 @@ namespace LinearAlgebra
   {
     template <typename, typename>
     class Vector;
+    template <typename>
+    class BlockVector;
   } // namespace distributed
 } // namespace LinearAlgebra
 #endif
@@ -73,9 +75,6 @@ namespace LinearAlgebra
  *
  * Alternatively, the IdentityMatrix class can be used to precondition in this
  * way.
- *
- * @author Guido Kanschat, 1999; extension for full compatibility with
- * LinearOperator class: Jean-Paul Pelteret, 2015
  */
 class PreconditionIdentity : public Subscriptor
 {
@@ -192,9 +191,6 @@ private:
  * Using SolverRichardson, the two relaxation parameters will be just
  * multiplied. Still, this class is useful in multigrid smoother objects
  * (MGSmootherRelaxation).
- *
- * @author Guido Kanschat, 2005; extension for full compatibility with
- * LinearOperator class: Jean-Paul Pelteret, 2015
  */
 class PreconditionRichardson : public Subscriptor
 {
@@ -357,8 +353,6 @@ private:
  *   PreconditionUseMatrix<>(
  *     matrix,&SparseMatrix<double>::template precondition_Jacobi<double>));
  * @endcode
- *
- * @author Guido Kanschat, Wolfgang Bangerth, 1999
  */
 template <typename MatrixType = SparseMatrix<double>,
           class VectorType    = Vector<double>>
@@ -403,9 +397,6 @@ private:
  * Base class for other preconditioners. Here, only some common features
  * Jacobi, SOR and SSOR preconditioners are implemented. For preconditioning,
  * refer to derived classes.
- *
- * @author Guido Kanschat, 2000; extension for full compatibility with
- * LinearOperator class: Jean-Paul Pelteret, 2015
  */
 template <typename MatrixType = SparseMatrix<double>>
 class PreconditionRelaxation : public Subscriptor
@@ -501,8 +492,6 @@ protected:
  *
  * solver.solve (A, x, b, precondition);
  * @endcode
- *
- * @author Guido Kanschat, 2000
  */
 template <typename MatrixType = SparseMatrix<double>>
 class PreconditionJacobi : public PreconditionRelaxation<MatrixType>
@@ -589,8 +578,6 @@ public:
  *
  * solver.solve (A, x, b, precondition);
  * @endcode
- *
- * @author Guido Kanschat, 2000
  */
 template <typename MatrixType = SparseMatrix<double>>
 class PreconditionSOR : public PreconditionRelaxation<MatrixType>
@@ -658,8 +645,6 @@ public:
  *
  * solver.solve (A, x, b, precondition);
  * @endcode
- *
- * @author Guido Kanschat, 2000
  */
 template <typename MatrixType = SparseMatrix<double>>
 class PreconditionSSOR : public PreconditionRelaxation<MatrixType>
@@ -759,9 +744,6 @@ private:
  *
  * solver.solve (A, x, b, precondition);
  * @endcode
- *
- * @author Guido Kanschat, 2003; extension for full compatibility with
- * LinearOperator class: Jean-Paul Pelteret, 2015
  */
 template <typename MatrixType = SparseMatrix<double>>
 class PreconditionPSOR : public PreconditionRelaxation<MatrixType>
@@ -914,7 +896,7 @@ private:
  * which are computed during the first invocation of vmult(). The algorithm
  * invokes a conjugate gradient solver (i.e., Lanczos iteration) so symmetry
  * and positive definiteness of the (preconditioned) matrix system are
- * requirements. The eigenvalue algorithm can be controlled by
+ * required. The eigenvalue algorithm can be controlled by
  * PreconditionChebyshev::AdditionalData::eig_cg_n_iterations specifying how
  * many iterations should be performed. The iterations are started from an
  * initial vector that depends on the vector type. For the classes
@@ -929,16 +911,20 @@ private:
  * length of the vector, except for the very first entry that is zero,
  * triggering high-frequency content again.
  *
- * The computation of eigenvalues happens the first time one of the
- * vmult(), Tvmult(), step() or Tstep() functions is called. This is because
- * temporary vectors of the same layout as the source and destination vectors
- * are necessary for these computations and this information gets only
- * available through vmult().
+ * The computation of eigenvalues happens the first time one of the vmult(),
+ * Tvmult(), step() or Tstep() functions is called or when
+ * estimate_eigenvalues() is called directly. In the latter case, it is
+ * necessary to provide a temporary vector of the same layout as the source
+ * and destination vectors used during application of the preconditioner.
  *
- * Due to the cost of the eigenvalue estimate in the first vmult(), this class
- * is most appropriate if it is applied repeatedly, e.g. in a smoother for a
- * geometric multigrid solver, that can in turn be used to solve several
- * linear systems.
+ * The estimates for minimum and maximum eigenvalue are taken from SolverCG
+ * (even if the solver did not converge in the requested number of
+ * iterations). Finally, the maximum eigenvalue is multiplied by a safety
+ * factor of 1.2.
+ *
+ * Due to the cost of the eigenvalue estimate, this class is most appropriate
+ * if it is applied repeatedly, e.g. in a smoother for a geometric multigrid
+ * solver, that can in turn be used to solve several linear systems.
  *
  * <h4>Bypassing the eigenvalue computation</h4>
  *
@@ -998,9 +984,6 @@ private:
  * entries that would be needed from the matrix alone), there is a backward
  * compatibility function that can extract the diagonal in case of a serial
  * computation.
- *
- * @author Martin Kronbichler, 2009, 2016; extension for full compatibility with
- * LinearOperator class: Jean-Paul Pelteret, 2015
  */
 template <typename MatrixType         = SparseMatrix<double>,
           typename VectorType         = Vector<double>,
@@ -1012,8 +995,6 @@ public:
    * Declare type for container size.
    */
   using size_type = types::global_dof_index;
-
-  // avoid warning about use of deprecated variables
 
   /**
    * Standardized data struct to pipe additional parameters to the
@@ -1096,6 +1077,9 @@ public:
   };
 
 
+  /**
+   * Constructor.
+   */
   PreconditionChebyshev();
 
   /**
@@ -1159,6 +1143,55 @@ public:
   size_type
   n() const;
 
+  /**
+   * A struct that contains information about the eigenvalue estimation
+   * performed by the PreconditionChebychev class.
+   */
+  struct EigenvalueInformation
+  {
+    /**
+     * Estimate for the smallest eigenvalue.
+     */
+    double min_eigenvalue_estimate;
+    /**
+     * Estimate for the largest eigenvalue.
+     */
+    double max_eigenvalue_estimate;
+    /**
+     * Number of CG iterations performed or 0.
+     */
+    unsigned int cg_iterations;
+    /**
+     * The degree of the Chebyshev polynomial (either as set using
+     * AdditionalData::degree or estimated as described there).
+     */
+    unsigned int degree;
+    /**
+     * Constructor initializing with invalid values.
+     */
+    EigenvalueInformation()
+      : min_eigenvalue_estimate{std::numeric_limits<double>::max()}
+      , max_eigenvalue_estimate{std::numeric_limits<double>::lowest()}
+      , cg_iterations{0}
+      , degree{0}
+    {}
+  };
+
+  /**
+   * Compute eigenvalue estimates required for the preconditioner.
+   *
+   * This function is called automatically on first use of the preconditioner
+   * if it is not called by the user. The layout of the vector @p src is used
+   * to create internal temporary vectors and its content does not matter.
+   *
+   * Initializes the factors theta and delta based on an eigenvalue
+   * computation. If the user set provided values for the largest eigenvalue
+   * in AdditionalData, no computation is performed and the information given
+   * by the user is used.
+   */
+  EigenvalueInformation
+  estimate_eigenvalues(const VectorType &src) const;
+
 private:
   /**
    * A pointer to the underlying matrix.
@@ -1211,15 +1244,6 @@ private:
    * overwrite the temporary vectors.
    */
   mutable Threads::Mutex mutex;
-
-  /**
-   * Initializes the factors theta and delta based on an eigenvalue
-   * computation. If the user set provided values for the largest eigenvalue
-   * in AdditionalData, no computation is performed and the information given
-   * by the user is used.
-   */
-  void
-  estimate_eigenvalues(const VectorType &src) const;
 };
 
 
@@ -1895,14 +1919,14 @@ namespace internal
     };
 
     template <typename Number>
-    struct VectorUpdatesRange : public parallel::ParallelForInteger
+    struct VectorUpdatesRange : public ::dealii::parallel::ParallelForInteger
     {
       VectorUpdatesRange(const VectorUpdater<Number> &updater,
                          const std::size_t            size)
         : updater(updater)
       {
         if (size < internal::VectorImplementation::minimum_parallel_grain_size)
-          apply_to_subrange(0, size);
+          VectorUpdatesRange::apply_to_subrange(0, size);
         else
           apply_parallel(
             0,
@@ -2085,6 +2109,15 @@ namespace internal
       vector.add(-mean_value);
     }
 
+    template <typename Number>
+    void
+    set_initial_guess(
+      ::dealii::LinearAlgebra::distributed::BlockVector<Number> &vector)
+    {
+      for (unsigned int block = 0; block < vector.n_blocks(); ++block)
+        set_initial_guess(vector.block(block));
+    }
+
 
 #  ifdef DEAL_II_COMPILER_CUDA_AWARE
     template <typename Number>
@@ -2120,13 +2153,7 @@ namespace internal
         1 + (n_local_elements - 1) / CUDAWrappers::block_size;
       set_initial_guess_kernel<<<n_blocks, CUDAWrappers::block_size>>>(
         first_local_range, n_local_elements, vector.get_values());
-
-#    ifdef DEBUG
-      // Check that the kernel was launched correctly
-      AssertCuda(cudaGetLastError());
-      // Check that there was no problem during the execution of the kernel
-      AssertCuda(cudaDeviceSynchronize());
-#    endif
+      AssertCudaKernel();
 
       const Number mean_value = vector.mean_value();
       vector.add(-mean_value);
@@ -2235,20 +2262,21 @@ PreconditionChebyshev<MatrixType, VectorType, PreconditionerType>::clear()
 
 
 template <typename MatrixType, typename VectorType, typename PreconditionerType>
-inline void
+inline typename PreconditionChebyshev<MatrixType,
+                                      VectorType,
+                                      PreconditionerType>::EigenvalueInformation
 PreconditionChebyshev<MatrixType, VectorType, PreconditionerType>::
   estimate_eigenvalues(const VectorType &src) const
 {
   Assert(eigenvalues_are_initialized == false, ExcInternalError());
   Assert(data.preconditioner.get() != nullptr, ExcNotInitialized());
 
+  PreconditionChebyshev<MatrixType, VectorType, PreconditionerType>::
+    EigenvalueInformation info{};
+
   solution_old.reinit(src);
   temp_vector1.reinit(src, true);
 
-  // calculate largest eigenvalue using a hand-tuned CG iteration on the
-  // matrix weighted by its diagonal. we start with a vector that consists of
-  // ones only, weighted by the length.
-  double max_eigenvalue, min_eigenvalue;
   if (data.eig_cg_n_iterations > 0)
     {
       Assert(data.eig_cg_n_iterations > 2,
@@ -2267,13 +2295,14 @@ PreconditionChebyshev<MatrixType, VectorType, PreconditionerType>::
       internal::PreconditionChebyshevImplementation::EigenvalueTracker
                            eigenvalue_tracker;
       SolverCG<VectorType> solver(control);
-      solver.connect_eigenvalues_slot(std::bind(
-        &internal::PreconditionChebyshevImplementation::EigenvalueTracker::slot,
-        &eigenvalue_tracker,
-        std::placeholders::_1));
+      solver.connect_eigenvalues_slot(
+        [&eigenvalue_tracker](const std::vector<double> &eigenvalues) {
+          eigenvalue_tracker.slot(eigenvalues);
+        });
 
-      // set an initial guess which is close to the constant vector but where
-      // one entry is different to trigger high frequencies
+      // set an initial guess that contains some high-frequency parts (to the
+      // extent possible without knowing the discretization and the numbering)
+      // to trigger high eigenvalues according to the external function
       internal::PreconditionChebyshevImplementation::set_initial_guess(
         temp_vector1);
       data.constraints.set_zero(temp_vector1);
@@ -2290,25 +2319,28 @@ PreconditionChebyshev<MatrixType, VectorType, PreconditionerType>::
 
       // read the eigenvalues from the attached eigenvalue tracker
       if (eigenvalue_tracker.values.empty())
-        min_eigenvalue = max_eigenvalue = 1;
+        info.min_eigenvalue_estimate = info.max_eigenvalue_estimate = 1.;
       else
         {
-          min_eigenvalue = eigenvalue_tracker.values.front();
+          info.min_eigenvalue_estimate = eigenvalue_tracker.values.front();
 
           // include a safety factor since the CG method will in general not
           // be converged
-          max_eigenvalue = 1.2 * eigenvalue_tracker.values.back();
+          info.max_eigenvalue_estimate = 1.2 * eigenvalue_tracker.values.back();
         }
+
+      info.cg_iterations = control.last_step();
     }
   else
     {
-      max_eigenvalue = data.max_eigenvalue;
-      min_eigenvalue = data.max_eigenvalue / data.smoothing_range;
+      info.max_eigenvalue_estimate = data.max_eigenvalue;
+      info.min_eigenvalue_estimate = data.max_eigenvalue / data.smoothing_range;
     }
 
   const double alpha = (data.smoothing_range > 1. ?
-                          max_eigenvalue / data.smoothing_range :
-                          std::min(0.9 * max_eigenvalue, min_eigenvalue));
+                          info.max_eigenvalue_estimate / data.smoothing_range :
+                          std::min(0.9 * info.max_eigenvalue_estimate,
+                                   info.min_eigenvalue_estimate));
 
   // in case the user set the degree to invalid unsigned int, we have to
   // determine the number of necessary iterations from the Chebyshev error
@@ -2317,7 +2349,7 @@ PreconditionChebyshev<MatrixType, VectorType, PreconditionerType>::
   // R. S. Varga, Matrix iterative analysis, 2nd ed., Springer, 2009
   if (data.degree == numbers::invalid_unsigned_int)
     {
-      const double actual_range = max_eigenvalue / alpha;
+      const double actual_range = info.max_eigenvalue_estimate / alpha;
       const double sigma        = (1. - std::sqrt(1. / actual_range)) /
                            (1. + std::sqrt(1. / actual_range));
       const double eps = data.smoothing_range;
@@ -2326,16 +2358,18 @@ PreconditionChebyshev<MatrixType, VectorType, PreconditionerType>::
         this)
         ->data.degree =
         1 + static_cast<unsigned int>(
-              std::log(1. / eps + std::sqrt(1. / eps / eps - 1)) /
+              std::log(1. / eps + std::sqrt(1. / eps / eps - 1.)) /
               std::log(1. / sigma));
     }
 
+  info.degree = data.degree;
+
   const_cast<
     PreconditionChebyshev<MatrixType, VectorType, PreconditionerType> *>(this)
-    ->delta = (max_eigenvalue - alpha) * 0.5;
+    ->delta = (info.max_eigenvalue_estimate - alpha) * 0.5;
   const_cast<
     PreconditionChebyshev<MatrixType, VectorType, PreconditionerType> *>(this)
-    ->theta = (max_eigenvalue + alpha) * 0.5;
+    ->theta = (info.max_eigenvalue_estimate + alpha) * 0.5;
 
   // We do not need the second temporary vector in case we have a
   // DiagonalMatrix as preconditioner and use deal.II's own vectors
@@ -2361,6 +2395,8 @@ PreconditionChebyshev<MatrixType, VectorType, PreconditionerType>::
   const_cast<
     PreconditionChebyshev<MatrixType, VectorType, PreconditionerType> *>(this)
     ->eigenvalues_are_initialized = true;
+
+  return info;
 }
 
 

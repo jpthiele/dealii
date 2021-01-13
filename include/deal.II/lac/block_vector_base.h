@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2004 - 2018 by the deal.II authors
+// Copyright (C) 2004 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -32,6 +32,7 @@
 #include <cmath>
 #include <cstddef>
 #include <iterator>
+#include <type_traits>
 #include <vector>
 
 DEAL_II_NAMESPACE_OPEN
@@ -60,35 +61,24 @@ class BlockVectorBase;
  * is true. This is sometimes useful in template contexts where we may want to
  * do things differently depending on whether a template type denotes a
  * regular or a block vector type.
- *
- * @author Wolfgang Bangerth, 2010
  */
 template <typename VectorType>
 struct IsBlockVector
 {
 private:
-  struct yes_type
-  {
-    char c[1];
-  };
-  struct no_type
-  {
-    char c[2];
-  };
-
   /**
    * Overload returning true if the class is derived from BlockVectorBase,
    * which is what block vectors do.
    */
   template <typename T>
-  static yes_type
+  static std::true_type
   check_for_block_vector(const BlockVectorBase<T> *);
 
   /**
    * Catch all for all other potential vector types that are not block
    * matrices.
    */
-  static no_type
+  static std::false_type
   check_for_block_vector(...);
 
 public:
@@ -98,8 +88,8 @@ public:
    * derived from BlockVectorBase<T>).
    */
   static const bool value =
-    (sizeof(check_for_block_vector(static_cast<VectorType *>(nullptr))) ==
-     sizeof(yes_type));
+    std::is_same<decltype(check_for_block_vector(std::declval<VectorType *>())),
+                 std::true_type>::value;
 };
 
 
@@ -113,8 +103,6 @@ namespace internal
 {
   /**
    * Namespace in which iterators in block vectors are implemented.
-   *
-   * @author Wolfgang Bangerth, 2001
    */
   namespace BlockVectorIterators
   {
@@ -132,8 +120,6 @@ namespace internal
      * does rarely change dynamically within an application, this is a
      * constant and we again have that the iterator satisfies the requirements
      * of a random access iterator.
-     *
-     * @author Wolfgang Bangerth, 2001
      */
     template <class BlockVectorType, bool Constness>
     class Iterator
@@ -444,7 +430,6 @@ namespace internal
  *
  * @see
  * @ref GlossBlockLA "Block (linear algebra)"
- * @author Wolfgang Bangerth, Guido Kanschat, 1999, 2000, 2001, 2002, 2004
  */
 template <class VectorType>
 class BlockVectorBase : public Subscriptor
@@ -1478,7 +1463,7 @@ template <class VectorType>
 inline typename BlockVectorBase<VectorType>::BlockType &
 BlockVectorBase<VectorType>::block(const unsigned int i)
 {
-  Assert(i < n_blocks(), ExcIndexRange(i, 0, n_blocks()));
+  AssertIndexRange(i, n_blocks());
 
   return components[i];
 }
@@ -1489,7 +1474,7 @@ template <class VectorType>
 inline const typename BlockVectorBase<VectorType>::BlockType &
 BlockVectorBase<VectorType>::block(const unsigned int i) const
 {
-  Assert(i < n_blocks(), ExcIndexRange(i, 0, n_blocks()));
+  AssertIndexRange(i, n_blocks());
 
   return components[i];
 }

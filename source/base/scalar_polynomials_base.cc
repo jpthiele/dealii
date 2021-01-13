@@ -16,7 +16,6 @@
 
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/scalar_polynomials_base.h>
-#include <deal.II/base/thread_management.h>
 
 #include <iomanip>
 #include <iostream>
@@ -35,6 +34,17 @@ ScalarPolynomialsBase<dim>::ScalarPolynomialsBase(
 
 
 
+template <int dim>
+std::size_t
+ScalarPolynomialsBase<dim>::memory_consumption() const
+{
+  Assert(false, ExcNotImplemented());
+  return 0;
+}
+
+
+
+template class ScalarPolynomialsBase<0>;
 template class ScalarPolynomialsBase<1>;
 template class ScalarPolynomialsBase<2>;
 template class ScalarPolynomialsBase<3>;

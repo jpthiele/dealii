@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2001 - 2018 by the deal.II authors
+// Copyright (C) 2001 - 2019 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -18,6 +18,8 @@
 
 
 #include <deal.II/base/config.h>
+
+#include <deal.II/base/qprojector.h>
 
 #include <deal.II/fe/mapping.h>
 
@@ -70,8 +72,6 @@ DEAL_II_NAMESPACE_OPEN
  * The class is intended for efficiency, and it does not do a whole lot of
  * error checking. If you apply this mapping to a cell that does not conform
  * to the requirements above, you will get strange results.
- *
- * @author Guido Kanschat, 2001; Ralf Hartmann, 2005
  */
 template <int dim, int spacedim = dim>
 class MappingCartesian : public Mapping<dim, spacedim>
@@ -180,7 +180,7 @@ private:
     InternalData(const Quadrature<dim> &quadrature);
 
     /**
-     * Return an estimate (in bytes) or the memory consumption of this object.
+     * Return an estimate (in bytes) for the memory consumption of this object.
      */
     virtual std::size_t
     memory_consumption() const override;
@@ -210,10 +210,12 @@ private:
   virtual std::unique_ptr<typename Mapping<dim, spacedim>::InternalDataBase>
   get_data(const UpdateFlags, const Quadrature<dim> &quadrature) const override;
 
+  using Mapping<dim, spacedim>::get_face_data;
+
   // documentation can be found in Mapping::get_face_data()
   virtual std::unique_ptr<typename Mapping<dim, spacedim>::InternalDataBase>
-  get_face_data(const UpdateFlags          flags,
-                const Quadrature<dim - 1> &quadrature) const override;
+  get_face_data(const UpdateFlags               flags,
+                const hp::QCollection<dim - 1> &quadrature) const override;
 
   // documentation can be found in Mapping::get_subface_data()
   virtual std::unique_ptr<typename Mapping<dim, spacedim>::InternalDataBase>
@@ -230,12 +232,14 @@ private:
     internal::FEValuesImplementation::MappingRelatedData<dim, spacedim>
       &output_data) const override;
 
+  using Mapping<dim, spacedim>::fill_fe_face_values;
+
   // documentation can be found in Mapping::fill_fe_face_values()
   virtual void
   fill_fe_face_values(
     const typename Triangulation<dim, spacedim>::cell_iterator &cell,
     const unsigned int                                          face_no,
-    const Quadrature<dim - 1> &                                 quadrature,
+    const hp::QCollection<dim - 1> &                            quadrature,
     const typename Mapping<dim, spacedim>::InternalDataBase &   internal_data,
     internal::FEValuesImplementation::MappingRelatedData<dim, spacedim>
       &output_data) const override;
@@ -255,24 +259,89 @@ private:
    * @}
    */
 
-
-
   /**
-   * Do the computation for the <tt>fill_*</tt> functions.
+   * Update the cell_extents field of the incoming InternalData object with the
+   * size of the incoming cell.
    */
   void
-  compute_fill(const typename Triangulation<dim, spacedim>::cell_iterator &cell,
-               const unsigned int               face_no,
-               const unsigned int               sub_no,
-               const CellSimilarity::Similarity cell_similarity,
-               const InternalData &             data,
-               std::vector<Point<dim>> &        quadrature_points,
-               std::vector<Tensor<1, dim>> &    normal_vectors) const;
+  update_cell_extents(
+    const typename Triangulation<dim, spacedim>::cell_iterator &cell,
+    const CellSimilarity::Similarity                            cell_similarity,
+    const InternalData &                                        data) const;
 
   /**
-   * Value to indicate that a given face or subface number is invalid.
+   * Compute the quadrature points if the UpdateFlags of the incoming
+   * InternalData object say that they should be updated.
+   *
+   * Called from fill_fe_values.
    */
-  static const unsigned int invalid_face_number = numbers::invalid_unsigned_int;
+  void
+  maybe_update_cell_quadrature_points(
+    const typename Triangulation<dim, spacedim>::cell_iterator &cell,
+    const InternalData &                                        data,
+    std::vector<Point<dim>> &quadrature_points) const;
+
+  /**
+   * Compute the quadrature points if the UpdateFlags of the incoming
+   * InternalData object say that they should be updated.
+   *
+   * Called from fill_fe_face_values.
+   */
+  void
+  maybe_update_face_quadrature_points(
+    const typename Triangulation<dim, spacedim>::cell_iterator &cell,
+    const unsigned int                                          face_no,
+    const InternalData &                                        data,
+    std::vector<Point<dim>> &quadrature_points) const;
+
+  /**
+   * Compute the quadrature points if the UpdateFlags of the incoming
+   * InternalData object say that they should be updated.
+   *
+   * Called from fill_fe_subface_values.
+   */
+  void
+  maybe_update_subface_quadrature_points(
+    const typename Triangulation<dim, spacedim>::cell_iterator &cell,
+    const unsigned int                                          face_no,
+    const unsigned int                                          sub_no,
+    const InternalData &                                        data,
+    std::vector<Point<dim>> &quadrature_points) const;
+
+  /**
+   * Transform quadrature points in InternalData to real space by scaling unit
+   * coordinates with cell_extends in each direction.
+   *
+   * Called from the various maybe_update_*_quadrature_points functions.
+   */
+  void
+  transform_quadrature_points(
+    const typename Triangulation<dim, spacedim>::cell_iterator &cell,
+    const InternalData &                                        data,
+    const typename QProjector<dim>::DataSetDescriptor &         offset,
+    std::vector<Point<dim>> &quadrature_points) const;
+
+  /**
+   * Compute the normal vectors if the UpdateFlags of the incoming InternalData
+   * object say that they should be updated.
+   */
+  void
+  maybe_update_normal_vectors(
+    const unsigned int           face_no,
+    const InternalData &         data,
+    std::vector<Tensor<1, dim>> &normal_vectors) const;
+
+  /**
+   * Since the Jacobian is constant for this mapping all derivatives of the
+   * Jacobian are identically zero. Fill these quantities with zeros if the
+   * corresponding update flags say that they should be updated.
+   */
+  void
+  maybe_update_jacobian_derivatives(
+    const InternalData &             data,
+    const CellSimilarity::Similarity cell_similarity,
+    internal::FEValuesImplementation::MappingRelatedData<dim, spacedim>
+      &output_data) const;
 };
 
 /*@}*/

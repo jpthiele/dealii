@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2006 - 2019 by the deal.II authors
+// Copyright (C) 2006 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -27,7 +27,8 @@
 
 #include <cmath>
 #include <complex>
-#include <cstdlib>
+#include <cstddef>
+#include <type_traits>
 
 #ifdef DEAL_II_COMPILER_CUDA_AWARE
 #  define DEAL_II_CUDA_HOST_DEV __host__ __device__
@@ -54,8 +55,6 @@ namespace internal
    *
    * @tparam Number The underlying data type for which one wants to find out
    *   the maximal length of hardware supported vectors.
-   *
-   * @author Peter Munch, 2019
    */
   template <typename Number>
   struct VectorizedArrayWidthSpecifier
@@ -70,9 +69,7 @@ namespace internal
    * A helper class specifying the maximal vector length of VectorizedArray
    * for the data type `double` for the given processor architecture and
    * optimization level. For a detailed description of supported maximal vector
-   * lengths, see the the documentation of VectorizedArray.
-   *
-   * @author Peter Munch, 2019
+   * lengths, see the documentation of VectorizedArray.
    */
   template <>
   struct VectorizedArrayWidthSpecifier<double>
@@ -81,13 +78,11 @@ namespace internal
      * Maximal vector length of VectorizedArray for double.
      */
     constexpr static unsigned int max_width =
-#if DEAL_II_COMPILER_VECTORIZATION_LEVEL >= 1 && defined(__ALTIVEC__)
-      2;
-#elif DEAL_II_COMPILER_VECTORIZATION_LEVEL >= 3 && defined(__AVX512F__)
+#if DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 512
       8;
-#elif DEAL_II_COMPILER_VECTORIZATION_LEVEL >= 2 && defined(__AVX__)
+#elif DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 256
       4;
-#elif DEAL_II_COMPILER_VECTORIZATION_LEVEL >= 1 && defined(__SSE2__)
+#elif DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 128
       2;
 #else
       1;
@@ -98,9 +93,7 @@ namespace internal
    * A helper class specifying the maximal vector length of VectorizedArray
    * for the data type `float` for the given processor architecture and
    * optimization level. For a detailed description of supported maximal vector
-   * lengths, see the the documentation of VectorizedArray.
-   *
-   * @author Peter Munch, 2019
+   * lengths, see the documentation of VectorizedArray.
    */
   template <>
   struct VectorizedArrayWidthSpecifier<float>
@@ -109,13 +102,13 @@ namespace internal
      * Maximal vector length of VectorizedArray for float.
      */
     constexpr static unsigned int max_width =
-#if DEAL_II_COMPILER_VECTORIZATION_LEVEL >= 1 && defined(__ALTIVEC__)
+#if DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 128 && defined(__ALTIVEC__)
       4;
-#elif DEAL_II_COMPILER_VECTORIZATION_LEVEL >= 3 && defined(__AVX512F__)
+#elif DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 512 && defined(__AVX512F__)
       16;
-#elif DEAL_II_COMPILER_VECTORIZATION_LEVEL >= 2 && defined(__AVX__)
+#elif DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 256 && defined(__AVX__)
       8;
-#elif DEAL_II_COMPILER_VECTORIZATION_LEVEL >= 1 && defined(__SSE2__)
+#elif DEAL_II_VECTORIZATION_WIDTH_IN_BITS >= 128 && defined(__SSE2__)
       4;
 #else
       1;
@@ -128,7 +121,7 @@ namespace internal
 // forward declarations to support abs or sqrt operations on VectorizedArray
 #ifndef DOXYGEN
 template <typename Number,
-          int width =
+          std::size_t width =
             internal::VectorizedArrayWidthSpecifier<Number>::max_width>
 class VectorizedArray;
 template <typename T>
@@ -154,36 +147,36 @@ DEAL_II_NAMESPACE_CLOSE
 
 namespace std
 {
-  template <typename Number, int width>
+  template <typename Number, std::size_t width>
   DEAL_II_ALWAYS_INLINE ::dealii::VectorizedArray<Number, width>
   sqrt(const ::dealii::VectorizedArray<Number, width> &);
-  template <typename Number, int width>
+  template <typename Number, std::size_t width>
   DEAL_II_ALWAYS_INLINE ::dealii::VectorizedArray<Number, width>
   abs(const ::dealii::VectorizedArray<Number, width> &);
-  template <typename Number, int width>
+  template <typename Number, std::size_t width>
   DEAL_II_ALWAYS_INLINE ::dealii::VectorizedArray<Number, width>
   max(const ::dealii::VectorizedArray<Number, width> &,
       const ::dealii::VectorizedArray<Number, width> &);
-  template <typename Number, int width>
+  template <typename Number, std::size_t width>
   DEAL_II_ALWAYS_INLINE ::dealii::VectorizedArray<Number, width>
   min(const ::dealii::VectorizedArray<Number, width> &,
       const ::dealii::VectorizedArray<Number, width> &);
-  template <typename Number, int width>
+  template <typename Number, size_t width>
   ::dealii::VectorizedArray<Number, width>
   pow(const ::dealii::VectorizedArray<Number, width> &, const Number p);
-  template <typename Number, int width>
+  template <typename Number, size_t width>
   ::dealii::VectorizedArray<Number, width>
   sin(const ::dealii::VectorizedArray<Number, width> &);
-  template <typename Number, int width>
+  template <typename Number, size_t width>
   ::dealii::VectorizedArray<Number, width>
   cos(const ::dealii::VectorizedArray<Number, width> &);
-  template <typename Number, int width>
+  template <typename Number, size_t width>
   ::dealii::VectorizedArray<Number, width>
   tan(const ::dealii::VectorizedArray<Number, width> &);
-  template <typename Number, int width>
+  template <typename Number, size_t width>
   ::dealii::VectorizedArray<Number, width>
   exp(const ::dealii::VectorizedArray<Number, width> &);
-  template <typename Number, int width>
+  template <typename Number, size_t width>
   ::dealii::VectorizedArray<Number, width>
   log(const ::dealii::VectorizedArray<Number, width> &);
 } // namespace std
@@ -272,23 +265,6 @@ namespace numbers
   template <typename Number>
   struct is_cuda_compatible<std::complex<Number>, void> : std::false_type
   {};
-
-  /**
-   * Check whether a value is not a number.
-   *
-   * This function uses either <code>std::isnan</code>, <code>isnan</code>, or
-   * <code>_isnan</code>, whichever is available on the system and returns the
-   * result.
-   *
-   * If none of the functions detecting NaN is available, this function
-   * returns false.
-   *
-   * @deprecated This function has been deprecated in favor of the C++11
-   * function <code>std::isnan</code>.
-   */
-  DEAL_II_DEPRECATED
-  bool
-  is_nan(const double x);
 
   /**
    * Return @p true if the given value is a finite floating point number, i.e.
@@ -433,8 +409,6 @@ namespace numbers
    * types and complex number types. This template is mostly used to implement
    * linear algebra classes such as vectors and matrices that work for both
    * real and complex numbers.
-   *
-   * @author Wolfgang Bangerth, 2007
    */
   template <typename number>
   struct NumberTraits
@@ -497,8 +471,6 @@ namespace numbers
   /**
    * Specialization of the general NumberTraits class that provides the
    * relevant information if the underlying data type is std::complex<T>.
-   *
-   * @author Wolfgang Bangerth, 2007
    */
   template <typename number>
   struct NumberTraits<std::complex<number>>

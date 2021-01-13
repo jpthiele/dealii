@@ -1,6 +1,6 @@
 <h1>Results</h1>
 
-Running the program produces graphics of two grids (grid-1.svg and grid-2.svg). 
+Running the program produces graphics of two grids (grid-1.svg and grid-2.svg).
 You can open these with most every web browser -- in the simplest case,
 just open the current directory in your file system explorer and click
 on the file. If you like working on the command line, you call your
@@ -54,6 +54,19 @@ the $x$-coordinate, subscripting <code>[1]</code> the
 $y$-coordinate). By looking at the functions that TriaAccessor
 provides, you can also use more complicated criteria for refinement.
 
+In general, what you can do with operations of the form
+`cell->something()` is a bit difficult to find in the documentation
+because `cell` is not a pointer but an iterator. The functions you can
+call on a cell can be found in the documentation of the classes
+`TriaAccessor` (which has functions that can also be called on faces
+of cells or, more generally, all sorts of geometric objects that
+appear in a triangulation), and `CellAccessor` (which adds a few
+functions that are specific to *cells*).
+
+A more thorough description of the whole iterator concept can be found
+in the @ref Iterators documentation module.
+
+
 <h4> Different geometries </h4>
 
 Another possibility would be to generate meshes of entirely different
@@ -94,7 +107,7 @@ Rather than postponing learning how to use a debugger till you really can't
 see any other way to find a bug, here's the one piece of
 advice we will provide in this program: learn how to use a debugger as soon as
 possible. It will be time well invested.
-(@dealiiVideoLectureSeeAlso{25}) The deal.II Frequently Asked 
+(@dealiiVideoLectureSeeAlso{25}) The deal.II Frequently Asked
 Questions (FAQ) page linked to from the top-level <a
 href="http://www.dealii.org/">deal.II webpage</a> also provides a good number
 of hints on debugging deal.II programs.

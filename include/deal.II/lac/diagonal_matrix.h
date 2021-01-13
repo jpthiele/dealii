@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2016 - 2018 by the deal.II authors
+// Copyright (C) 2016 - 2019 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -16,6 +16,8 @@
 #ifndef dealii_diagonal_matrix_h
 #define dealii_diagonal_matrix_h
 
+
+#include <deal.II/base/config.h>
 
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/vector_operation.h>
@@ -41,8 +43,6 @@ DEAL_II_NAMESPACE_OPEN
  *                        locally_relevant_dofs,
  *                        mpi_communicator);
  * @endcode
- *
- * @author Martin Kronbichler, 2016
  */
 template <typename VectorType = Vector<double>>
 class DiagonalMatrix : public Subscriptor

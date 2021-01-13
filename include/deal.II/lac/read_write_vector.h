@@ -22,7 +22,6 @@
 #include <deal.II/base/memory_consumption.h>
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/template_constraints.h>
-#include <deal.II/base/thread_management.h>
 #include <deal.II/base/types.h>
 #include <deal.II/base/utilities.h>
 
@@ -125,8 +124,6 @@ namespace LinearAlgebra
    * ranges are stored in ascending order of the first index of each range.
    * The function IndexSet::largest_range_starting_index() can be used to
    * get the first index of the largest range.
-   *
-   * @author Bruno Turcksin, 2015.
    */
   template <typename Number>
   class ReadWriteVector : public Subscriptor
@@ -328,7 +325,7 @@ namespace LinearAlgebra
      * communication pattern is used multiple times. This can be used to improve
      * performance.
      *
-     * @note: The @p trilinos_vec is not allowed to have ghost entries.
+     * @note The @p trilinos_vec is not allowed to have ghost entries.
      */
     void
     import(const TrilinosWrappers::MPI::Vector &trilinos_vec,

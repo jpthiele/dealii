@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2018 - 2019 by the deal.II authors
+// Copyright (C) 2018 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -48,6 +48,13 @@ namespace LinearAlgebra
   class ReadWriteVector;
 #  endif
 
+  /**
+   * A namespace for classes that provide wrappers for Trilinos' Tpetra vectors.
+   *
+   * This namespace provides wrappers for the Tpetra::Vector class from the
+   * Tpetra package (https://trilinos.github.io/tpetra.html) that is part of
+   * Trilinos.
+   */
   namespace TpetraWrappers
   {
     /**
@@ -71,7 +78,6 @@ namespace LinearAlgebra
      *
      * @ingroup TrilinosWrappers
      * @ingroup Vectors
-     * @author Daniel Arndt, 2019
      */
     template <typename Number>
     class Vector : public VectorSpaceVector<Number>, public Subscriptor

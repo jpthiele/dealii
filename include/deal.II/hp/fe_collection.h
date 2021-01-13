@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2003 - 2019 by the deal.II authors
+// Copyright (C) 2003 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -30,8 +30,7 @@ namespace hp
 {
   /**
    * This class acts as a collection of finite element objects used in the
-   * hp::DoFHandler. It is thus to a hp::DoFHandler what a FiniteElement is to
-   * a ::DoFHandler.
+   * DoFHandler.
    *
    * It implements the concepts stated in the
    * @ref hpcollection
@@ -47,15 +46,13 @@ namespace hp
    * one case (<tt>spacedim != dim </tt>).
    *
    * @ingroup hp hpcollection
-   *
-   * @author Wolfgang Bangerth, 2003
    */
   template <int dim, int spacedim = dim>
   class FECollection : public Subscriptor
   {
   public:
     /**
-     * Whenever p adaptivity is considered in an hp finite element program,
+     * Whenever p-adaptivity is considered in an hp-finite element program,
      * a hierarchy of finite elements needs to be established to determine
      * succeeding finite elements for refinement and preceding ones for
      * coarsening.
@@ -228,6 +225,13 @@ namespace hp
     n_blocks() const;
 
     /**
+     * Return the maximum of values returned by FiniteElement::get_degree()
+     * over all elements of this collection.
+     */
+    unsigned int
+    max_degree() const;
+
+    /**
      * Return the maximal number of degrees of freedom per vertex over all
      * elements of this collection.
      */
@@ -279,13 +283,13 @@ namespace hp
     /**
      * Return whether all elements in this collection implement the hanging
      * node constraints in the new way, which has to be used to make elements
-     * "hp compatible". If this is not the case, the function returns false,
+     * "hp-compatible". If this is not the case, the function returns false,
      * which implies, that at least one element in the FECollection does not
      * support the new face interface constraints. On the other hand, if this
-     * method does return true, this does not imply that the hp method will
+     * method does return true, this does not imply that the hp-method will
      * work!
      *
-     * This behaviour is related to the fact, that FiniteElement classes,
+     * This behavior is related to the fact, that FiniteElement classes,
      * which provide the new style hanging node constraints might still not
      * provide them for all possible cases. If FE_Q and FE_RaviartThomas
      * elements are included in the FECollection and both properly implement
@@ -297,61 +301,11 @@ namespace hp
     hp_constraints_are_implemented() const;
 
     /**
-     * Try to find a least dominant finite element inside this FECollection
-     * which dominates all of those finite elements in the current collection
-     * indexed by the numbers provided through @p fes . In other words, we
-     * first form the set of elements in this collection that dominate
-     * all of the ones that are indexed by the argument @p fes, and then
-     * within that set of dominating elements, we find the <i>least</i>
-     * dominant one.
-     *
-     * For example, if an FECollection consists of
-     * `{FE_Q(1),FE_Q(2),FE_Q(3),FE_Q(4)}` elements
-     * and the argument @p fes equals `{2,3}`, then the set of dominating
-     * elements consists of `{0,1,2}`, of which `2` (i.e., the `FE_Q(3)`) is the
-     * least dominant one, and then that's what the function returns.
-     *
-     * On the other hand, if the FECollection consists of
-     * `{FE_Q(1)xFE_Q(1),FE_Q(2)xFE_Q(2),FE_Q(2)xFE_Q(3),FE_Q(3)xFE_Q(2)}`
-     * elements and the argument is again @p fes equal to `{2,3}`, then the set of dominating
-     * elements consists of `{0,1}` because now neither of the last two
-     * elements dominates the other, of which `1` (i.e., the `FE_Q(2)xFE_Q(2)`)
-     * is the least dominant one -- so that's what the function returns in
-     * this case.
-     *
-     * For the purpose of this function by domination we consider either
-     * FiniteElementDomination::Domination::this_element_dominates or
-     * FiniteElementDomination::Domination::either_element_can_dominate;
-     * therefore the element can dominate itself. Thus, if an FECollection
-     * contains `{FE_Q(1),FE_Q(2),FE_Q(3),FE_Q(4)}` and @p fes only has
-     * a single element `{3}`, then the function returns 3.
-     *
-     * If the function is not able to find a finite element that satisfies
-     * the description above, the function returns
-     * numbers::invalid_unsigned_int. An example would go like this:
-     * If the FECollection consists of `{FE_Nothing x FE_Nothing, FE_Q(1)xFE_Q(2), FE_Q(2)xFE_Q(1)}` with @p fes as `{1}`,
-     * the function will not find a most dominating element as the default
-     * behavior of FE_Nothing is to return
-     * FiniteElementDomination::no_requirements when comparing for face
-     * domination with any other element. In other words, the set of dominating
-     * elements is empty, and we can not find a least dominant one among it. The
-     * return value is therefore numbers::invalid_unsigned_int.
-     *
-     * @deprecated This function has been succeeded by
-     * `hp::FECollection::find_dominating_fe_extended(fes, 1)`.
-     * To recreate its exact behavior, use code such as
-     * `fe_collection.find_dominated_fe(
-     * fe_collection.find_common_fes(fes, 1), 1)`.
-     */
-    DEAL_II_DEPRECATED unsigned int
-    find_least_face_dominating_fe(const std::set<unsigned int> &fes) const;
-
-    /**
      * Return the indices of finite elements in this FECollection that dominate
      * all elements associated with the provided set of indices @p fes.
      *
      * You may find information about the domination behavior of finite elements
-     * in their respecitve class documentation or in the implementation of their
+     * in their respective class documentation or in the implementation of their
      * inherited member function FiniteElement::compare_for_domination().
      * Consider that a finite element may or may not dominate itself (e.g.
      * FE_Nothing elements).
@@ -376,7 +330,7 @@ namespace hp
      * dominated by all elements associated with the provided set of indices @p fes.
      *
      * You may find information about the domination behavior of finite elements
-     * in their respecitve class documentation or in the implementation of their
+     * in their respective class documentation or in the implementation of their
      * inherited member function FiniteElement::compare_for_domination().
      * Consider that a finite element may or may not dominate itself (e.g.
      * FE_Nothing elements).
@@ -401,7 +355,7 @@ namespace hp
      * that dominates all other elements of this very set.
      *
      * You may find information about the domination behavior of finite elements
-     * in their respecitve class documentation or in the implementation of their
+     * in their respective class documentation or in the implementation of their
      * inherited member function FiniteElement::compare_for_domination().
      * Consider that a finite element may or may not dominate itself (e.g.
      * FE_Nothing elements).
@@ -437,7 +391,7 @@ namespace hp
      * that is dominated by all other elements of this very set.
      *
      * You may find information about the domination behavior of finite elements
-     * in their respecitve class documentation or in the implementation of their
+     * in their respective class documentation or in the implementation of their
      * inherited member function FiniteElement::compare_for_domination().
      * Consider that a finite element may or may not dominate itself (e.g.
      * FE_Nothing elements).
@@ -477,7 +431,7 @@ namespace hp
      * provided set @p fes are part of.
      *
      * You may find information about the domination behavior of finite elements
-     * in their respecitve class documentation or in the implementation of their
+     * in their respective class documentation or in the implementation of their
      * inherited member function FiniteElement::compare_for_domination().
      * Consider that a finite element may or may not dominate itself (e.g.
      * FE_Nothing elements).
@@ -503,7 +457,7 @@ namespace hp
      * element space which includes all finite elements of the provided set @p fes.
      *
      * You may find information about the domination behavior of finite elements
-     * in their respecitve class documentation or in the implementation of their
+     * in their respective class documentation or in the implementation of their
      * inherited member function FiniteElement::compare_for_domination().
      * Consider that a finite element may or may not dominate itself (e.g.
      * FE_Nothing elements).
@@ -781,16 +735,6 @@ namespace hp
     DeclException0(ExcNoFiniteElements);
 
     /**
-     * Exception
-     *
-     * @ingroup Exceptions
-     */
-    DeclExceptionMsg(
-      ExcNoDominatedFiniteElementAmongstChildren,
-      "No FiniteElement has been found in your FECollection that is "
-      "dominated by all children of a cell you are trying to coarsen!");
-
-    /**
      * @}
      */
 
@@ -834,7 +778,8 @@ namespace hp
     // loop over all of the given arguments and add the finite elements to
     // this collection. Inlining the definition of fe_pointers causes internal
     // compiler errors on GCC 7.1.1 so we define it separately:
-    const auto fe_pointers = {&fes...};
+    const auto fe_pointers = {
+      (static_cast<const FiniteElement<dim, spacedim> *>(&fes))...};
     for (const auto p : fe_pointers)
       push_back(*p);
   }
@@ -899,9 +844,23 @@ namespace hp
   inline const FiniteElement<dim, spacedim> &FECollection<dim, spacedim>::
                                              operator[](const unsigned int index) const
   {
-    Assert(index < finite_elements.size(),
-           ExcIndexRange(index, 0, finite_elements.size()));
+    AssertIndexRange(index, finite_elements.size());
     return *finite_elements[index];
+  }
+
+
+
+  template <int dim, int spacedim>
+  unsigned int
+  FECollection<dim, spacedim>::max_degree() const
+  {
+    Assert(finite_elements.size() > 0, ExcNoFiniteElements());
+
+    unsigned int max = 0;
+    for (unsigned int i = 0; i < finite_elements.size(); ++i)
+      max = std::max(max, finite_elements[i]->degree);
+
+    return max;
   }
 
 
@@ -914,8 +873,7 @@ namespace hp
 
     unsigned int max = 0;
     for (unsigned int i = 0; i < finite_elements.size(); ++i)
-      if (finite_elements[i]->dofs_per_vertex > max)
-        max = finite_elements[i]->dofs_per_vertex;
+      max = std::max(max, finite_elements[i]->n_dofs_per_vertex());
 
     return max;
   }
@@ -930,8 +888,7 @@ namespace hp
 
     unsigned int max = 0;
     for (unsigned int i = 0; i < finite_elements.size(); ++i)
-      if (finite_elements[i]->dofs_per_line > max)
-        max = finite_elements[i]->dofs_per_line;
+      max = std::max(max, finite_elements[i]->n_dofs_per_line());
 
     return max;
   }
@@ -946,8 +903,7 @@ namespace hp
 
     unsigned int max = 0;
     for (unsigned int i = 0; i < finite_elements.size(); ++i)
-      if (finite_elements[i]->dofs_per_quad > max)
-        max = finite_elements[i]->dofs_per_quad;
+      max = std::max(max, finite_elements[i]->max_dofs_per_quad());
 
     return max;
   }
@@ -962,8 +918,7 @@ namespace hp
 
     unsigned int max = 0;
     for (unsigned int i = 0; i < finite_elements.size(); ++i)
-      if (finite_elements[i]->dofs_per_hex > max)
-        max = finite_elements[i]->dofs_per_hex;
+      max = std::max(max, finite_elements[i]->n_dofs_per_hex());
 
     return max;
   }
@@ -978,8 +933,7 @@ namespace hp
 
     unsigned int max = 0;
     for (unsigned int i = 0; i < finite_elements.size(); ++i)
-      if (finite_elements[i]->dofs_per_face > max)
-        max = finite_elements[i]->dofs_per_face;
+      max = std::max(max, finite_elements[i]->max_dofs_per_face());
 
     return max;
   }
@@ -994,8 +948,7 @@ namespace hp
 
     unsigned int max = 0;
     for (unsigned int i = 0; i < finite_elements.size(); ++i)
-      if (finite_elements[i]->dofs_per_cell > max)
-        max = finite_elements[i]->dofs_per_cell;
+      max = std::max(max, finite_elements[i]->n_dofs_per_cell());
 
     return max;
   }
@@ -1006,13 +959,12 @@ namespace hp
   FECollection<dim, spacedim>::hp_constraints_are_implemented() const
   {
     Assert(finite_elements.size() > 0, ExcNoFiniteElements());
-
-    bool hp_constraints = true;
-    for (unsigned int i = 0; i < finite_elements.size(); ++i)
-      hp_constraints =
-        hp_constraints && finite_elements[i]->hp_constraints_are_implemented();
-
-    return hp_constraints;
+    return std::all_of(
+      finite_elements.cbegin(),
+      finite_elements.cend(),
+      [](const std::shared_ptr<const FiniteElement<dim, spacedim>> &fe) {
+        return fe->hp_constraints_are_implemented();
+      });
   }
 
 

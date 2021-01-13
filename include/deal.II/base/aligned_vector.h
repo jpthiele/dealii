@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2011 - 2019 by the deal.II authors
+// Copyright (C) 2011 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -85,7 +85,7 @@ public:
    *
    * @dealiiOperationIsMultithreaded
    */
-  AlignedVector(const size_type size, const T &init = T());
+  explicit AlignedVector(const size_type size, const T &init = T());
 
   /**
    * Destructor.
@@ -313,7 +313,8 @@ public:
 
   /**
    * Write the data of this object to a stream for the purpose of
-   * serialization.
+   * serialization using the [BOOST serialization
+   * library](https://www.boost.org/doc/libs/1_74_0/libs/serialization/doc/index.html).
    */
   template <class Archive>
   void
@@ -321,13 +322,27 @@ public:
 
   /**
    * Read the data of this object from a stream for the purpose of
-   * serialization.
+   * serialization using the [BOOST serialization
+   * library](https://www.boost.org/doc/libs/1_74_0/libs/serialization/doc/index.html).
    */
   template <class Archive>
   void
   load(Archive &ar, const unsigned int version);
 
+#ifdef DOXYGEN
+  /**
+   * Write and read the data of this object from a stream for the purpose
+   * of serialization using the [BOOST serialization
+   * library](https://www.boost.org/doc/libs/1_74_0/libs/serialization/doc/index.html).
+   */
+  template <class Archive>
+  void
+  serialize(Archive &archive, const unsigned int version);
+#else
+  // This macro defines the serialize() method that is compatible with
+  // the templated save() and load() method that have been implemented.
   BOOST_SERIALIZATION_SPLIT_MEMBER()
+#endif
 
 private:
   /**
@@ -465,7 +480,7 @@ namespace internal
              ExcInternalError());
       const std::size_t size = source_end - source_begin;
       if (size < minimum_parallel_grain_size)
-        apply_to_subrange(0, size);
+        AlignedVectorMove::apply_to_subrange(0, size);
       else
         apply_parallel(0, size, minimum_parallel_grain_size);
     }
@@ -554,7 +569,7 @@ namespace internal
             trivial_element = true;
         }
       if (size < minimum_parallel_grain_size)
-        apply_to_subrange(0, size);
+        AlignedVectorSet::apply_to_subrange(0, size);
       else
         apply_parallel(0, size, minimum_parallel_grain_size);
     }
@@ -637,7 +652,7 @@ namespace internal
       Assert(destination != nullptr, ExcInternalError());
 
       if (size < minimum_parallel_grain_size)
-        apply_to_subrange(0, size);
+        AlignedVectorDefaultInitialize::apply_to_subrange(0, size);
       else
         apply_parallel(0, size, minimum_parallel_grain_size);
     }

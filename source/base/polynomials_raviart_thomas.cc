@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2004 - 2018 by the deal.II authors
+// Copyright (C) 2004 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -16,11 +16,11 @@
 
 #include <deal.II/base/polynomials_raviart_thomas.h>
 #include <deal.II/base/quadrature_lib.h>
-#include <deal.II/base/std_cxx14/memory.h>
 #include <deal.II/base/thread_management.h>
 
 #include <iomanip>
 #include <iostream>
+#include <memory>
 
 // TODO[WB]: This class is not thread-safe: it uses mutable member variables
 // that contain temporary state. this is not what one would want when one uses a
@@ -94,7 +94,7 @@ PolynomialsRaviartThomas<dim>::evaluate(
   // deal.II/create_mass_matrix_05)
   // will start to produce random
   // results in multithread mode
-  static Threads::Mutex       mutex;
+  static std::mutex           mutex;
   std::lock_guard<std::mutex> lock(mutex);
 
   static std::vector<double>         p_values;
@@ -127,12 +127,12 @@ PolynomialsRaviartThomas<dim>::evaluate(
       for (unsigned int c = 0; c < dim; ++c)
         p(c) = unit_point((c + d) % dim);
 
-      polynomial_space.compute(p,
-                               p_values,
-                               p_grads,
-                               p_grad_grads,
-                               p_third_derivatives,
-                               p_fourth_derivatives);
+      polynomial_space.evaluate(p,
+                                p_values,
+                                p_grads,
+                                p_grad_grads,
+                                p_third_derivatives,
+                                p_fourth_derivatives);
 
       for (unsigned int i = 0; i < p_values.size(); ++i)
         values[i + d * n_sub][d] = p_values[i];
@@ -188,7 +188,7 @@ template <int dim>
 std::unique_ptr<TensorPolynomialsBase<dim>>
 PolynomialsRaviartThomas<dim>::clone() const
 {
-  return std_cxx14::make_unique<PolynomialsRaviartThomas<dim>>(*this);
+  return std::make_unique<PolynomialsRaviartThomas<dim>>(*this);
 }
 
 

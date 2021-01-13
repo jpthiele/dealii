@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 1999 - 2019 by the deal.II authors
+// Copyright (C) 1999 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -15,7 +15,6 @@
 
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/template_constraints.h>
-#include <deal.II/base/thread_management.h>
 #include <deal.II/base/types.h>
 #include <deal.II/base/utilities.h>
 
@@ -40,8 +39,11 @@
 #include <deal.II/lac/sparsity_pattern.h>
 #include <deal.II/lac/sparsity_tools.h>
 
+#include <deal.II/multigrid/mg_constrained_dofs.h>
 #include <deal.II/multigrid/mg_tools.h>
 
+DEAL_II_DISABLE_EXTRA_DIAGNOSTICS
+#define BOOST_BIND_GLOBAL_PLACEHOLDERS
 #include <boost/config.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/bandwidth.hpp>
@@ -51,6 +53,8 @@
 #include <boost/graph/properties.hpp>
 #include <boost/random.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
+#undef BOOST_BIND_GLOBAL_PLACEHOLDERS
+DEAL_II_ENABLE_EXTRA_DIAGNOSTICS
 
 #include <algorithm>
 #include <cmath>
@@ -85,11 +89,11 @@ namespace DoFRenumbering
 
     namespace internal
     {
-      template <typename DoFHandlerType>
+      template <int dim, int spacedim>
       void
-      create_graph(const DoFHandlerType &dof_handler,
-                   const bool            use_constraints,
-                   boosttypes::Graph &   graph,
+      create_graph(const DoFHandler<dim, spacedim> &dof_handler,
+                   const bool                       use_constraints,
+                   boosttypes::Graph &              graph,
                    boosttypes::property_map<boosttypes::Graph,
                                             boosttypes::vertex_degree_t>::type
                      &graph_degree)
@@ -120,11 +124,11 @@ namespace DoFRenumbering
     } // namespace internal
 
 
-    template <typename DoFHandlerType>
+    template <int dim, int spacedim>
     void
-    Cuthill_McKee(DoFHandlerType &dof_handler,
-                  const bool      reversed_numbering,
-                  const bool      use_constraints)
+    Cuthill_McKee(DoFHandler<dim, spacedim> &dof_handler,
+                  const bool                 reversed_numbering,
+                  const bool                 use_constraints)
     {
       std::vector<types::global_dof_index> renumbering(
         dof_handler.n_dofs(), numbers::invalid_dof_index);
@@ -140,10 +144,10 @@ namespace DoFRenumbering
     }
 
 
-    template <typename DoFHandlerType>
+    template <int dim, int spacedim>
     void
     compute_Cuthill_McKee(std::vector<types::global_dof_index> &new_dof_indices,
-                          const DoFHandlerType &                dof_handler,
+                          const DoFHandler<dim, spacedim> &     dof_handler,
                           const bool reversed_numbering,
                           const bool use_constraints)
     {
@@ -182,11 +186,11 @@ namespace DoFRenumbering
 
 
 
-    template <typename DoFHandlerType>
+    template <int dim, int spacedim>
     void
-    king_ordering(DoFHandlerType &dof_handler,
-                  const bool      reversed_numbering,
-                  const bool      use_constraints)
+    king_ordering(DoFHandler<dim, spacedim> &dof_handler,
+                  const bool                 reversed_numbering,
+                  const bool                 use_constraints)
     {
       std::vector<types::global_dof_index> renumbering(
         dof_handler.n_dofs(), numbers::invalid_dof_index);
@@ -202,10 +206,10 @@ namespace DoFRenumbering
     }
 
 
-    template <typename DoFHandlerType>
+    template <int dim, int spacedim>
     void
     compute_king_ordering(std::vector<types::global_dof_index> &new_dof_indices,
-                          const DoFHandlerType &                dof_handler,
+                          const DoFHandler<dim, spacedim> &     dof_handler,
                           const bool reversed_numbering,
                           const bool use_constraints)
     {
@@ -238,11 +242,11 @@ namespace DoFRenumbering
 
 
 
-    template <typename DoFHandlerType>
+    template <int dim, int spacedim>
     void
-    minimum_degree(DoFHandlerType &dof_handler,
-                   const bool      reversed_numbering,
-                   const bool      use_constraints)
+    minimum_degree(DoFHandler<dim, spacedim> &dof_handler,
+                   const bool                 reversed_numbering,
+                   const bool                 use_constraints)
     {
       std::vector<types::global_dof_index> renumbering(
         dof_handler.n_dofs(), numbers::invalid_dof_index);
@@ -258,11 +262,11 @@ namespace DoFRenumbering
     }
 
 
-    template <typename DoFHandlerType>
+    template <int dim, int spacedim>
     void
     compute_minimum_degree(
       std::vector<types::global_dof_index> &new_dof_indices,
-      const DoFHandlerType &                dof_handler,
+      const DoFHandler<dim, spacedim> &     dof_handler,
       const bool                            reversed_numbering,
       const bool                            use_constraints)
     {
@@ -288,13 +292,9 @@ namespace DoFRenumbering
 
       std::vector<dealii::types::global_dof_index> dofs_on_this_cell;
 
-      typename DoFHandlerType::active_cell_iterator cell = dof_handler
-                                                             .begin_active(),
-                                                    endc = dof_handler.end();
-
-      for (; cell != endc; ++cell)
+      for (const auto &cell : dof_handler.active_cell_iterators())
         {
-          const unsigned int dofs_per_cell = cell->get_fe().dofs_per_cell;
+          const unsigned int dofs_per_cell = cell->get_fe().n_dofs_per_cell();
 
           dofs_on_this_cell.resize(dofs_per_cell);
 
@@ -361,9 +361,9 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
-  Cuthill_McKee(DoFHandlerType &                            dof_handler,
+  Cuthill_McKee(DoFHandler<dim, spacedim> &                 dof_handler,
                 const bool                                  reversed_numbering,
                 const bool                                  use_constraints,
                 const std::vector<types::global_dof_index> &starting_indices)
@@ -385,15 +385,19 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
   compute_Cuthill_McKee(
     std::vector<types::global_dof_index> &      new_indices,
-    const DoFHandlerType &                      dof_handler,
+    const DoFHandler<dim, spacedim> &           dof_handler,
     const bool                                  reversed_numbering,
     const bool                                  use_constraints,
-    const std::vector<types::global_dof_index> &starting_indices)
+    const std::vector<types::global_dof_index> &starting_indices,
+    const unsigned int                          level)
   {
+    const bool reorder_level_dofs =
+      (level == numbers::invalid_unsigned_int) ? false : true;
+
     // see if there is anything to do at all or whether we can skip the work on
     // this processor
     if (dof_handler.locally_owned_dofs().n_elements() == 0)
@@ -406,26 +410,51 @@ namespace DoFRenumbering
     //
     // note that if constraints are not requested, then the 'constraints'
     // object will be empty and using it has no effect
-    IndexSet locally_relevant_dofs;
-    DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+    IndexSet        locally_relevant_dofs;
+    const IndexSet &locally_owned_dofs = [&]() -> const IndexSet & {
+      if (reorder_level_dofs == false)
+        {
+          DoFTools::extract_locally_relevant_dofs(dof_handler,
+                                                  locally_relevant_dofs);
+          return dof_handler.locally_owned_dofs();
+        }
+      else
+        {
+          Assert(dof_handler.n_dofs(level) != numbers::invalid_dof_index,
+                 ExcDoFHandlerNotInitialized());
+          DoFTools::extract_locally_relevant_level_dofs(dof_handler,
+                                                        level,
+                                                        locally_relevant_dofs);
+          return dof_handler.locally_owned_mg_dofs(level);
+        }
+    }();
 
     AffineConstraints<double> constraints;
     if (use_constraints)
       {
+        // reordering with constraints is not yet implemented on a level basis
+        Assert(reorder_level_dofs == false, ExcNotImplemented());
+
         constraints.reinit(locally_relevant_dofs);
         DoFTools::make_hanging_node_constraints(dof_handler, constraints);
       }
     constraints.close();
 
-    const IndexSet &locally_owned_dofs = dof_handler.locally_owned_dofs();
-
     // see if we can get away with the sequential algorithm
     if (locally_owned_dofs.n_elements() == locally_owned_dofs.size())
       {
-        AssertDimension(new_indices.size(), dof_handler.n_dofs());
+        AssertDimension(new_indices.size(), locally_owned_dofs.n_elements());
 
-        DynamicSparsityPattern dsp(dof_handler.n_dofs(), dof_handler.n_dofs());
-        DoFTools::make_sparsity_pattern(dof_handler, dsp, constraints);
+        DynamicSparsityPattern dsp(locally_owned_dofs.size(),
+                                   locally_owned_dofs.size());
+        if (reorder_level_dofs == false)
+          {
+            DoFTools::make_sparsity_pattern(dof_handler, dsp, constraints);
+          }
+        else
+          {
+            MGTools::make_sparsity_pattern(dof_handler, dsp, level);
+          }
 
         SparsityTools::reorder_Cuthill_McKee(dsp,
                                              new_indices,
@@ -444,7 +473,17 @@ namespace DoFRenumbering
         // relevant. in the process, also check that all indices
         // really belong to at least the locally relevant ones
         IndexSet locally_active_dofs;
-        DoFTools::extract_locally_active_dofs(dof_handler, locally_active_dofs);
+        if (reorder_level_dofs == false)
+          {
+            DoFTools::extract_locally_active_dofs(dof_handler,
+                                                  locally_active_dofs);
+          }
+        else
+          {
+            DoFTools::extract_locally_active_level_dofs(dof_handler,
+                                                        locally_active_dofs,
+                                                        level);
+          }
 
         bool needs_locally_active = false;
         for (const auto starting_index : starting_indices)
@@ -457,7 +496,7 @@ namespace DoFRenumbering
                   locally_active_dofs.is_element(starting_index),
                   ExcMessage(
                     "You specified global degree of freedom " +
-                    Utilities::to_string(starting_index) +
+                    std::to_string(starting_index) +
                     " as a starting index, but this index is not among the "
                     "locally active ones on this processor, as required "
                     "for this function."));
@@ -468,13 +507,25 @@ namespace DoFRenumbering
         const IndexSet index_set_to_use =
           (needs_locally_active ? locally_active_dofs : locally_owned_dofs);
 
+        // if this process doesn't own any DoFs (on this level), there is
+        // nothing to do
+        if (index_set_to_use.n_elements() == 0)
+          return;
+
         // then create first the global sparsity pattern, and then the local
         // sparsity pattern from the global one by transferring its indices to
         // processor-local (locally owned or locally active) index space
-        DynamicSparsityPattern dsp(dof_handler.n_dofs(),
-                                   dof_handler.n_dofs(),
+        DynamicSparsityPattern dsp(index_set_to_use.size(),
+                                   index_set_to_use.size(),
                                    index_set_to_use);
-        DoFTools::make_sparsity_pattern(dof_handler, dsp, constraints);
+        if (reorder_level_dofs == false)
+          {
+            DoFTools::make_sparsity_pattern(dof_handler, dsp, constraints);
+          }
+        else
+          {
+            MGTools::make_sparsity_pattern(dof_handler, dsp, level);
+          }
 
         DynamicSparsityPattern local_sparsity(index_set_to_use.n_elements(),
                                               index_set_to_use.n_elements());
@@ -596,9 +647,9 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
-  Cuthill_McKee(DoFHandlerType &                            dof_handler,
+  Cuthill_McKee(DoFHandler<dim, spacedim> &                 dof_handler,
                 const unsigned int                          level,
                 const bool                                  reversed_numbering,
                 const std::vector<types::global_dof_index> &starting_indices)
@@ -606,16 +657,16 @@ namespace DoFRenumbering
     Assert(dof_handler.n_dofs(level) != numbers::invalid_dof_index,
            ExcDoFHandlerNotInitialized());
 
-    // make the connection graph
-    DynamicSparsityPattern dsp(dof_handler.n_dofs(level),
-                               dof_handler.n_dofs(level));
-    MGTools::make_sparsity_pattern(dof_handler, dsp, level);
+    std::vector<types::global_dof_index> new_indices(
+      dof_handler.locally_owned_mg_dofs(level).n_elements(),
+      numbers::invalid_dof_index);
 
-    std::vector<types::global_dof_index> new_indices(dsp.n_rows());
-    SparsityTools::reorder_Cuthill_McKee(dsp, new_indices, starting_indices);
-
-    if (reversed_numbering)
-      new_indices = Utilities::reverse_permutation(new_indices);
+    compute_Cuthill_McKee(new_indices,
+                          dof_handler,
+                          reversed_numbering,
+                          false,
+                          starting_indices,
+                          level);
 
     // actually perform renumbering;
     // this is dimension specific and
@@ -625,22 +676,20 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
-  component_wise(DoFHandlerType &                 dof_handler,
+  component_wise(DoFHandler<dim, spacedim> &      dof_handler,
                  const std::vector<unsigned int> &component_order_arg)
   {
     std::vector<types::global_dof_index> renumbering(
       dof_handler.n_locally_owned_dofs(), numbers::invalid_dof_index);
 
-    typename DoFHandlerType::active_cell_iterator start =
-      dof_handler.begin_active();
-    const typename DoFHandlerType::level_cell_iterator end = dof_handler.end();
-
     const types::global_dof_index result =
-      compute_component_wise<DoFHandlerType::dimension,
-                             DoFHandlerType::space_dimension>(
-        renumbering, start, end, component_order_arg, false);
+      compute_component_wise<dim, spacedim>(renumbering,
+                                            dof_handler.begin_active(),
+                                            dof_handler.end(),
+                                            component_order_arg,
+                                            false);
     if (result == 0)
       return;
 
@@ -661,9 +710,9 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
-  component_wise(DoFHandlerType &                 dof_handler,
+  component_wise(DoFHandler<dim, spacedim> &      dof_handler,
                  const unsigned int               level,
                  const std::vector<unsigned int> &component_order_arg)
   {
@@ -674,13 +723,13 @@ namespace DoFRenumbering
       dof_handler.locally_owned_mg_dofs(level).n_elements(),
       numbers::invalid_dof_index);
 
-    typename DoFHandlerType::level_cell_iterator start =
+    typename DoFHandler<dim, spacedim>::level_cell_iterator start =
       dof_handler.begin(level);
-    typename DoFHandlerType::level_cell_iterator end = dof_handler.end(level);
+    typename DoFHandler<dim, spacedim>::level_cell_iterator end =
+      dof_handler.end(level);
 
     const types::global_dof_index result =
-      compute_component_wise<DoFHandlerType::dimension,
-                             DoFHandlerType::space_dimension>(
+      compute_component_wise<dim, spacedim>(
         renumbering, start, end, component_order_arg, true);
 
     if (result == 0)
@@ -759,8 +808,8 @@ namespace DoFRenumbering
     std::vector<std::vector<unsigned int>> component_list(fe_collection.size());
     for (unsigned int f = 0; f < fe_collection.size(); ++f)
       {
-        const FiniteElement<dim, spacedim> &fe            = fe_collection[f];
-        const unsigned int                  dofs_per_cell = fe.dofs_per_cell;
+        const FiniteElement<dim, spacedim> &fe = fe_collection[f];
+        const unsigned int dofs_per_cell       = fe.n_dofs_per_cell();
         component_list[f].resize(dofs_per_cell);
         for (unsigned int i = 0; i < dofs_per_cell; ++i)
           if (fe.is_primitive(i))
@@ -818,7 +867,7 @@ namespace DoFRenumbering
         // list using their component
         const unsigned int fe_index = cell->active_fe_index();
         const unsigned int dofs_per_cell =
-          fe_collection[fe_index].dofs_per_cell;
+          fe_collection[fe_index].n_dofs_per_cell();
         local_dof_indices.resize(dofs_per_cell);
         cell->get_active_or_mg_dof_indices(local_dof_indices);
 
@@ -950,19 +999,12 @@ namespace DoFRenumbering
     std::vector<types::global_dof_index> renumbering(
       dof_handler.n_locally_owned_dofs(), numbers::invalid_dof_index);
 
-    typename DoFHandler<dim, spacedim>::active_cell_iterator start =
-      dof_handler.begin_active();
-    const typename DoFHandler<dim, spacedim>::level_cell_iterator end =
-      dof_handler.end();
-
     const types::global_dof_index result = compute_block_wise<
       dim,
       spacedim,
       typename DoFHandler<dim, spacedim>::active_cell_iterator,
-      typename DoFHandler<dim, spacedim>::level_cell_iterator>(renumbering,
-                                                               start,
-                                                               end,
-                                                               false);
+      typename DoFHandler<dim, spacedim>::level_cell_iterator>(
+      renumbering, dof_handler.begin_active(), dof_handler.end(), false);
     if (result == 0)
       return;
 
@@ -977,37 +1019,6 @@ namespace DoFRenumbering
              ((dof_handler.n_locally_owned_dofs() < dof_handler.n_dofs()) &&
               (result <= dof_handler.n_dofs())),
            ExcInternalError());
-
-    dof_handler.renumber_dofs(renumbering);
-  }
-
-
-
-  template <int dim, int spacedim>
-  void
-  block_wise(hp::DoFHandler<dim, spacedim> &dof_handler)
-  {
-    std::vector<types::global_dof_index> renumbering(
-      dof_handler.n_dofs(), numbers::invalid_dof_index);
-
-    typename hp::DoFHandler<dim, spacedim>::active_cell_iterator start =
-      dof_handler.begin_active();
-    const typename hp::DoFHandler<dim, spacedim>::level_cell_iterator end =
-      dof_handler.end();
-
-    const types::global_dof_index result = compute_block_wise<
-      dim,
-      spacedim,
-      typename hp::DoFHandler<dim, spacedim>::active_cell_iterator,
-      typename hp::DoFHandler<dim, spacedim>::level_cell_iterator>(renumbering,
-                                                                   start,
-                                                                   end,
-                                                                   false);
-
-    if (result == 0)
-      return;
-
-    Assert(result == dof_handler.n_dofs(), ExcInternalError());
 
     dof_handler.renumber_dofs(renumbering);
   }
@@ -1088,8 +1099,8 @@ namespace DoFRenumbering
     for (unsigned int f = 0; f < fe_collection.size(); ++f)
       {
         const FiniteElement<dim, spacedim> &fe = fe_collection[f];
-        block_list[f].resize(fe.dofs_per_cell);
-        for (unsigned int i = 0; i < fe.dofs_per_cell; ++i)
+        block_list[f].resize(fe.n_dofs_per_cell());
+        for (unsigned int i = 0; i < fe.n_dofs_per_cell(); ++i)
           block_list[f][i] = fe.system_to_block_index(i).first;
       }
 
@@ -1133,7 +1144,7 @@ namespace DoFRenumbering
         // list using their component
         const unsigned int fe_index = cell->active_fe_index();
         const unsigned int dofs_per_cell =
-          fe_collection[fe_index].dofs_per_cell;
+          fe_collection[fe_index].n_dofs_per_cell();
         local_dof_indices.resize(dofs_per_cell);
         cell->get_active_or_mg_dof_indices(local_dof_indices);
 
@@ -1296,7 +1307,8 @@ namespace DoFRenumbering
           if (cell->is_locally_owned())
             {
               // first get the existing DoF indices
-              const unsigned int dofs_per_cell = cell->get_fe().dofs_per_cell;
+              const unsigned int dofs_per_cell =
+                cell->get_fe().n_dofs_per_cell();
               std::vector<types::global_dof_index> local_dof_indices(
                 dofs_per_cell);
               cell->get_dof_indices(local_dof_indices);
@@ -1342,13 +1354,10 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
-  hierarchical(DoFHandlerType &dof_handler)
+  hierarchical(DoFHandler<dim, spacedim> &dof_handler)
   {
-    const int dim      = DoFHandlerType::dimension;
-    const int spacedim = DoFHandlerType::space_dimension;
-
     std::vector<types::global_dof_index> renumbering(
       dof_handler.n_locally_owned_dofs(), numbers::invalid_dof_index);
 
@@ -1398,8 +1407,8 @@ namespace DoFRenumbering
             const unsigned int coarse_cell_index =
               tria->get_p4est_tree_to_coarse_cell_permutation()[c];
 
-            const typename DoFHandlerType::level_cell_iterator this_cell(
-              tria, 0, coarse_cell_index, &dof_handler);
+            const typename DoFHandler<dim, spacedim>::level_cell_iterator
+              this_cell(tria, 0, coarse_cell_index, &dof_handler);
 
             next_free_dof_offset =
               compute_hierarchical_recursive<dim>(next_free_dof_offset,
@@ -1416,7 +1425,8 @@ namespace DoFRenumbering
       {
         // this is not a distributed Triangulation, so we can traverse coarse
         // cells in the normal order
-        for (typename DoFHandlerType::cell_iterator cell = dof_handler.begin(0);
+        for (typename DoFHandler<dim, spacedim>::cell_iterator cell =
+               dof_handler.begin(0);
              cell != dof_handler.end(0);
              ++cell)
           next_free_dof_offset =
@@ -1447,10 +1457,10 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
-  sort_selected_dofs_back(DoFHandlerType &         dof_handler,
-                          const std::vector<bool> &selected_dofs)
+  sort_selected_dofs_back(DoFHandler<dim, spacedim> &dof_handler,
+                          const std::vector<bool> &  selected_dofs)
   {
     std::vector<types::global_dof_index> renumbering(
       dof_handler.n_dofs(), numbers::invalid_dof_index);
@@ -1461,11 +1471,11 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
-  sort_selected_dofs_back(DoFHandlerType &         dof_handler,
-                          const std::vector<bool> &selected_dofs,
-                          const unsigned int       level)
+  sort_selected_dofs_back(DoFHandler<dim, spacedim> &dof_handler,
+                          const std::vector<bool> &  selected_dofs,
+                          const unsigned int         level)
   {
     Assert(dof_handler.n_dofs(level) != numbers::invalid_dof_index,
            ExcDoFHandlerNotInitialized());
@@ -1482,11 +1492,11 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
   compute_sort_selected_dofs_back(
     std::vector<types::global_dof_index> &new_indices,
-    const DoFHandlerType &                dof_handler,
+    const DoFHandler<dim, spacedim> &     dof_handler,
     const std::vector<bool> &             selected_dofs)
   {
     const types::global_dof_index n_dofs = dof_handler.n_dofs();
@@ -1520,11 +1530,11 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
   compute_sort_selected_dofs_back(
     std::vector<types::global_dof_index> &new_indices,
-    const DoFHandlerType &                dof_handler,
+    const DoFHandler<dim, spacedim> &     dof_handler,
     const std::vector<bool> &             selected_dofs,
     const unsigned int                    level)
   {
@@ -1562,11 +1572,12 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
   cell_wise(
-    DoFHandlerType &                                                  dof,
-    const std::vector<typename DoFHandlerType::active_cell_iterator> &cells)
+    DoFHandler<dim, spacedim> &dof,
+    const std::vector<typename DoFHandler<dim, spacedim>::active_cell_iterator>
+      &cells)
   {
     std::vector<types::global_dof_index> renumbering(
       dof.n_locally_owned_dofs());
@@ -1577,20 +1588,18 @@ namespace DoFRenumbering
   }
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
   compute_cell_wise(
     std::vector<types::global_dof_index> &new_indices,
     std::vector<types::global_dof_index> &reverse,
-    const DoFHandlerType &                dof,
-    const typename std::vector<typename DoFHandlerType::active_cell_iterator>
-      &cells)
+    const DoFHandler<dim, spacedim> &     dof,
+    const typename std::vector<
+      typename DoFHandler<dim, spacedim>::active_cell_iterator> &cells)
   {
-    if (const parallel::TriangulationBase<DoFHandlerType::dimension,
-                                          DoFHandlerType::space_dimension> *p =
-          dynamic_cast<const parallel::TriangulationBase<
-            DoFHandlerType::dimension,
-            DoFHandlerType::space_dimension> *>(&dof.get_triangulation()))
+    if (const parallel::TriangulationBase<dim, spacedim> *p =
+          dynamic_cast<const parallel::TriangulationBase<dim, spacedim> *>(
+            &dof.get_triangulation()))
       {
         AssertDimension(cells.size(), p->n_locally_owned_active_cells());
       }
@@ -1653,13 +1662,12 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
-  cell_wise(
-    DoFHandlerType &   dof,
-    const unsigned int level,
-    const typename std::vector<typename DoFHandlerType::level_cell_iterator>
-      &cells)
+  cell_wise(DoFHandler<dim, spacedim> &dof,
+            const unsigned int         level,
+            const typename std::vector<
+              typename DoFHandler<dim, spacedim>::level_cell_iterator> &cells)
   {
     Assert(dof.n_dofs(level) != numbers::invalid_dof_index,
            ExcDoFHandlerNotInitialized());
@@ -1673,15 +1681,15 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
   compute_cell_wise(
     std::vector<types::global_dof_index> &new_order,
     std::vector<types::global_dof_index> &reverse,
-    const DoFHandlerType &                dof,
+    const DoFHandler<dim, spacedim> &     dof,
     const unsigned int                    level,
-    const typename std::vector<typename DoFHandlerType::level_cell_iterator>
-      &cells)
+    const typename std::vector<
+      typename DoFHandler<dim, spacedim>::level_cell_iterator> &cells)
   {
     Assert(cells.size() == dof.get_triangulation().n_cells(level),
            ExcDimensionMismatch(cells.size(),
@@ -1727,11 +1735,11 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
-  downstream(DoFHandlerType &                                  dof,
-             const Tensor<1, DoFHandlerType::space_dimension> &direction,
-             const bool dof_wise_renumbering)
+  downstream(DoFHandler<dim, spacedim> &dof,
+             const Tensor<1, spacedim> &direction,
+             const bool                 dof_wise_renumbering)
   {
     std::vector<types::global_dof_index> renumbering(dof.n_dofs());
     std::vector<types::global_dof_index> reverse(dof.n_dofs());
@@ -1743,39 +1751,31 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
-  compute_downstream(
-    std::vector<types::global_dof_index> &            new_indices,
-    std::vector<types::global_dof_index> &            reverse,
-    const DoFHandlerType &                            dof,
-    const Tensor<1, DoFHandlerType::space_dimension> &direction,
-    const bool                                        dof_wise_renumbering)
+  compute_downstream(std::vector<types::global_dof_index> &new_indices,
+                     std::vector<types::global_dof_index> &reverse,
+                     const DoFHandler<dim, spacedim> &     dof,
+                     const Tensor<1, spacedim> &           direction,
+                     const bool                            dof_wise_renumbering)
   {
-    Assert(
-      (dynamic_cast<
-         const parallel::TriangulationBase<DoFHandlerType::dimension,
-                                           DoFHandlerType::space_dimension> *>(
-         &dof.get_triangulation()) == nullptr),
-      ExcNotImplemented());
+    Assert((dynamic_cast<const parallel::TriangulationBase<dim, spacedim> *>(
+              &dof.get_triangulation()) == nullptr),
+           ExcNotImplemented());
 
     if (dof_wise_renumbering == false)
       {
-        std::vector<typename DoFHandlerType::active_cell_iterator>
+        std::vector<typename DoFHandler<dim, spacedim>::active_cell_iterator>
           ordered_cells;
         ordered_cells.reserve(dof.get_triangulation().n_active_cells());
-        const CompareDownstream<typename DoFHandlerType::active_cell_iterator,
-                                DoFHandlerType::space_dimension>
+        const CompareDownstream<
+          typename DoFHandler<dim, spacedim>::active_cell_iterator,
+          spacedim>
           comparator(direction);
 
-        typename DoFHandlerType::active_cell_iterator p   = dof.begin_active();
-        typename DoFHandlerType::active_cell_iterator end = dof.end();
+        for (const auto &cell : dof.active_cell_iterators())
+          ordered_cells.push_back(cell);
 
-        while (p != end)
-          {
-            ordered_cells.push_back(p);
-            ++p;
-          }
         std::sort(ordered_cells.begin(), ordered_cells.end(), comparator);
 
         compute_cell_wise(new_indices, reverse, dof, ordered_cells);
@@ -1784,50 +1784,42 @@ namespace DoFRenumbering
       {
         // similar code as for
         // DoFTools::map_dofs_to_support_points, but
-        // need to do this for general DoFHandlerType classes and
+        // need to do this for general DoFHandler<dim, spacedim> classes and
         // want to be able to sort the result
         // (otherwise, could use something like
         // DoFTools::map_support_points_to_dofs)
         const unsigned int n_dofs = dof.n_dofs();
-        std::vector<
-          std::pair<Point<DoFHandlerType::space_dimension>, unsigned int>>
+        std::vector<std::pair<Point<spacedim>, unsigned int>>
           support_point_list(n_dofs);
 
-        const hp::FECollection<DoFHandlerType::dimension> &fe_collection =
-          dof.get_fe_collection();
+        const hp::FECollection<dim> &fe_collection = dof.get_fe_collection();
         Assert(fe_collection[0].has_support_points(),
-               typename FiniteElement<
-                 DoFHandlerType::dimension>::ExcFEHasNoSupportPoints());
-        hp::QCollection<DoFHandlerType::dimension> quadrature_collection;
+               typename FiniteElement<dim>::ExcFEHasNoSupportPoints());
+        hp::QCollection<dim> quadrature_collection;
         for (unsigned int comp = 0; comp < fe_collection.size(); ++comp)
           {
             Assert(fe_collection[comp].has_support_points(),
-                   typename FiniteElement<
-                     DoFHandlerType::dimension>::ExcFEHasNoSupportPoints());
+                   typename FiniteElement<dim>::ExcFEHasNoSupportPoints());
             quadrature_collection.push_back(
-              Quadrature<DoFHandlerType::dimension>(
-                fe_collection[comp].get_unit_support_points()));
+              Quadrature<dim>(fe_collection[comp].get_unit_support_points()));
           }
-        hp::FEValues<DoFHandlerType::dimension, DoFHandlerType::space_dimension>
-          hp_fe_values(fe_collection,
-                       quadrature_collection,
-                       update_quadrature_points);
+        hp::FEValues<dim, spacedim> hp_fe_values(fe_collection,
+                                                 quadrature_collection,
+                                                 update_quadrature_points);
 
         std::vector<bool> already_touched(n_dofs, false);
 
-        std::vector<types::global_dof_index>          local_dof_indices;
-        typename DoFHandlerType::active_cell_iterator begin =
-          dof.begin_active();
-        typename DoFHandlerType::active_cell_iterator end = dof.end();
-        for (; begin != end; ++begin)
+        std::vector<types::global_dof_index> local_dof_indices;
+
+        for (const auto &cell : dof.active_cell_iterators())
           {
-            const unsigned int dofs_per_cell = begin->get_fe().dofs_per_cell;
+            const unsigned int dofs_per_cell = cell->get_fe().n_dofs_per_cell();
             local_dof_indices.resize(dofs_per_cell);
-            hp_fe_values.reinit(begin);
-            const FEValues<DoFHandlerType::dimension> &fe_values =
+            hp_fe_values.reinit(cell);
+            const FEValues<dim> &fe_values =
               hp_fe_values.get_present_fe_values();
-            begin->get_active_or_mg_dof_indices(local_dof_indices);
-            const std::vector<Point<DoFHandlerType::space_dimension>> &points =
+            cell->get_active_or_mg_dof_indices(local_dof_indices);
+            const std::vector<Point<spacedim>> &points =
               fe_values.get_quadrature_points();
             for (unsigned int i = 0; i < dofs_per_cell; ++i)
               if (!already_touched[local_dof_indices[i]])
@@ -1839,8 +1831,7 @@ namespace DoFRenumbering
                 }
           }
 
-        ComparePointwiseDownstream<DoFHandlerType::space_dimension> comparator(
-          direction);
+        ComparePointwiseDownstream<spacedim> comparator(direction);
         std::sort(support_point_list.begin(),
                   support_point_list.end(),
                   comparator);
@@ -1851,12 +1842,12 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
-  downstream(DoFHandlerType &                                  dof,
-             const unsigned int                                level,
-             const Tensor<1, DoFHandlerType::space_dimension> &direction,
-             const bool dof_wise_renumbering)
+  downstream(DoFHandler<dim, spacedim> &dof,
+             const unsigned int         level,
+             const Tensor<1, spacedim> &direction,
+             const bool                 dof_wise_renumbering)
   {
     std::vector<types::global_dof_index> renumbering(dof.n_dofs(level));
     std::vector<types::global_dof_index> reverse(dof.n_dofs(level));
@@ -1868,26 +1859,29 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
-  compute_downstream(
-    std::vector<types::global_dof_index> &            new_indices,
-    std::vector<types::global_dof_index> &            reverse,
-    const DoFHandlerType &                            dof,
-    const unsigned int                                level,
-    const Tensor<1, DoFHandlerType::space_dimension> &direction,
-    const bool                                        dof_wise_renumbering)
+  compute_downstream(std::vector<types::global_dof_index> &new_indices,
+                     std::vector<types::global_dof_index> &reverse,
+                     const DoFHandler<dim, spacedim> &     dof,
+                     const unsigned int                    level,
+                     const Tensor<1, spacedim> &           direction,
+                     const bool                            dof_wise_renumbering)
   {
     if (dof_wise_renumbering == false)
       {
-        std::vector<typename DoFHandlerType::level_cell_iterator> ordered_cells;
+        std::vector<typename DoFHandler<dim, spacedim>::level_cell_iterator>
+          ordered_cells;
         ordered_cells.reserve(dof.get_triangulation().n_cells(level));
-        const CompareDownstream<typename DoFHandlerType::level_cell_iterator,
-                                DoFHandlerType::space_dimension>
+        const CompareDownstream<
+          typename DoFHandler<dim, spacedim>::level_cell_iterator,
+          spacedim>
           comparator(direction);
 
-        typename DoFHandlerType::level_cell_iterator p   = dof.begin(level);
-        typename DoFHandlerType::level_cell_iterator end = dof.end(level);
+        typename DoFHandler<dim, spacedim>::level_cell_iterator p =
+          dof.begin(level);
+        typename DoFHandler<dim, spacedim>::level_cell_iterator end =
+          dof.end(level);
 
         while (p != end)
           {
@@ -1901,33 +1895,31 @@ namespace DoFRenumbering
     else
       {
         Assert(dof.get_fe().has_support_points(),
-               typename FiniteElement<
-                 DoFHandlerType::dimension>::ExcFEHasNoSupportPoints());
+               typename FiniteElement<dim>::ExcFEHasNoSupportPoints());
         const unsigned int n_dofs = dof.n_dofs(level);
-        std::vector<
-          std::pair<Point<DoFHandlerType::space_dimension>, unsigned int>>
+        std::vector<std::pair<Point<spacedim>, unsigned int>>
           support_point_list(n_dofs);
 
-        Quadrature<DoFHandlerType::dimension> q_dummy(
-          dof.get_fe().get_unit_support_points());
-        FEValues<DoFHandlerType::dimension, DoFHandlerType::space_dimension>
-          fe_values(dof.get_fe(), q_dummy, update_quadrature_points);
+        Quadrature<dim>         q_dummy(dof.get_fe().get_unit_support_points());
+        FEValues<dim, spacedim> fe_values(dof.get_fe(),
+                                          q_dummy,
+                                          update_quadrature_points);
 
         std::vector<bool> already_touched(dof.n_dofs(), false);
 
-        const unsigned int dofs_per_cell = dof.get_fe().dofs_per_cell;
+        const unsigned int dofs_per_cell = dof.get_fe().n_dofs_per_cell();
         std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
-        typename DoFHandlerType::level_cell_iterator begin = dof.begin(level);
-        typename DoFHandlerType::level_cell_iterator end   = dof.end(level);
+        typename DoFHandler<dim, spacedim>::level_cell_iterator begin =
+          dof.begin(level);
+        typename DoFHandler<dim, spacedim>::level_cell_iterator end =
+          dof.end(level);
         for (; begin != end; ++begin)
           {
-            const typename Triangulation<
-              DoFHandlerType::dimension,
-              DoFHandlerType::space_dimension>::cell_iterator &begin_tria =
-              begin;
+            const typename Triangulation<dim, spacedim>::cell_iterator
+              &begin_tria = begin;
             begin->get_active_or_mg_dof_indices(local_dof_indices);
             fe_values.reinit(begin_tria);
-            const std::vector<Point<DoFHandlerType::space_dimension>> &points =
+            const std::vector<Point<spacedim>> &points =
               fe_values.get_quadrature_points();
             for (unsigned int i = 0; i < dofs_per_cell; ++i)
               if (!already_touched[local_dof_indices[i]])
@@ -1939,8 +1931,7 @@ namespace DoFRenumbering
                 }
           }
 
-        ComparePointwiseDownstream<DoFHandlerType::space_dimension> comparator(
-          direction);
+        ComparePointwiseDownstream<spacedim> comparator(direction);
         std::sort(support_point_list.begin(),
                   support_point_list.end(),
                   comparator);
@@ -2025,11 +2016,11 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
-  clockwise_dg(DoFHandlerType &                              dof,
-               const Point<DoFHandlerType::space_dimension> &center,
-               const bool                                    counter)
+  clockwise_dg(DoFHandler<dim, spacedim> &dof,
+               const Point<spacedim> &    center,
+               const bool                 counter)
   {
     std::vector<types::global_dof_index> renumbering(dof.n_dofs());
     compute_clockwise_dg(renumbering, dof, center, counter);
@@ -2039,26 +2030,21 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
   compute_clockwise_dg(std::vector<types::global_dof_index> &new_indices,
-                       const DoFHandlerType &                dof,
-                       const Point<DoFHandlerType::space_dimension> &center,
-                       const bool                                    counter)
+                       const DoFHandler<dim, spacedim> &     dof,
+                       const Point<spacedim> &               center,
+                       const bool                            counter)
   {
-    std::vector<typename DoFHandlerType::active_cell_iterator> ordered_cells;
+    std::vector<typename DoFHandler<dim, spacedim>::active_cell_iterator>
+      ordered_cells;
     ordered_cells.reserve(dof.get_triangulation().n_active_cells());
-    internal::ClockCells<DoFHandlerType::space_dimension> comparator(center,
-                                                                     counter);
+    internal::ClockCells<spacedim> comparator(center, counter);
 
-    typename DoFHandlerType::active_cell_iterator p   = dof.begin_active();
-    typename DoFHandlerType::active_cell_iterator end = dof.end();
+    for (const auto &cell : dof.active_cell_iterators())
+      ordered_cells.push_back(cell);
 
-    while (p != end)
-      {
-        ordered_cells.push_back(p);
-        ++p;
-      }
     std::sort(ordered_cells.begin(), ordered_cells.end(), comparator);
 
     std::vector<types::global_dof_index> reverse(new_indices.size());
@@ -2067,20 +2053,22 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
-  clockwise_dg(DoFHandlerType &                              dof,
-               const unsigned int                            level,
-               const Point<DoFHandlerType::space_dimension> &center,
-               const bool                                    counter)
+  clockwise_dg(DoFHandler<dim, spacedim> &dof,
+               const unsigned int         level,
+               const Point<spacedim> &    center,
+               const bool                 counter)
   {
-    std::vector<typename DoFHandlerType::level_cell_iterator> ordered_cells;
+    std::vector<typename DoFHandler<dim, spacedim>::level_cell_iterator>
+      ordered_cells;
     ordered_cells.reserve(dof.get_triangulation().n_active_cells());
-    internal::ClockCells<DoFHandlerType::space_dimension> comparator(center,
-                                                                     counter);
+    internal::ClockCells<spacedim> comparator(center, counter);
 
-    typename DoFHandlerType::level_cell_iterator p   = dof.begin(level);
-    typename DoFHandlerType::level_cell_iterator end = dof.end(level);
+    typename DoFHandler<dim, spacedim>::level_cell_iterator p =
+      dof.begin(level);
+    typename DoFHandler<dim, spacedim>::level_cell_iterator end =
+      dof.end(level);
 
     while (p != end)
       {
@@ -2094,9 +2082,9 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
-  random(DoFHandlerType &dof_handler)
+  random(DoFHandler<dim, spacedim> &dof_handler)
   {
     std::vector<types::global_dof_index> renumbering(
       dof_handler.n_dofs(), numbers::invalid_dof_index);
@@ -2107,9 +2095,9 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
-  random(DoFHandlerType &dof_handler, const unsigned int level)
+  random(DoFHandler<dim, spacedim> &dof_handler, const unsigned int level)
   {
     Assert(dof_handler.n_dofs(level) != numbers::invalid_dof_index,
            ExcDoFHandlerNotInitialized());
@@ -2125,10 +2113,10 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
   compute_random(std::vector<types::global_dof_index> &new_indices,
-                 const DoFHandlerType &                dof_handler)
+                 const DoFHandler<dim, spacedim> &     dof_handler)
   {
     const types::global_dof_index n_dofs = dof_handler.n_dofs();
     Assert(new_indices.size() == n_dofs,
@@ -2158,10 +2146,10 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
   compute_random(std::vector<types::global_dof_index> &new_indices,
-                 const DoFHandlerType &                dof_handler,
+                 const DoFHandler<dim, spacedim> &     dof_handler,
                  const unsigned int                    level)
   {
     const types::global_dof_index n_dofs = dof_handler.n_dofs(level);
@@ -2192,14 +2180,12 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
-  subdomain_wise(DoFHandlerType &dof_handler)
+  subdomain_wise(DoFHandler<dim, spacedim> &dof_handler)
   {
     Assert(
-      (!dynamic_cast<
-        const parallel::TriangulationBase<DoFHandlerType::dimension,
-                                          DoFHandlerType::space_dimension> *>(
+      (!dynamic_cast<const parallel::TriangulationBase<dim, spacedim> *>(
         &dof_handler.get_triangulation())),
       ExcMessage(
         "Parallel triangulations are already enumerated according to their MPI process id."));
@@ -2213,10 +2199,10 @@ namespace DoFRenumbering
 
 
 
-  template <typename DoFHandlerType>
+  template <int dim, int spacedim>
   void
   compute_subdomain_wise(std::vector<types::global_dof_index> &new_dof_indices,
-                         const DoFHandlerType &                dof_handler)
+                         const DoFHandler<dim, spacedim> &     dof_handler)
   {
     const types::global_dof_index n_dofs = dof_handler.n_dofs();
     Assert(new_dof_indices.size() == n_dofs,

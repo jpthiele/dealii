@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2003 - 2018 by the deal.II authors
+// Copyright (C) 2003 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -52,9 +52,9 @@
 
 
 
-template <typename DoFHandlerType>
+template <int dim>
 void
-check_this(const DoFHandlerType &dof_handler)
+check_this(const DoFHandler<dim> &dof_handler)
 {
   // create sparsity pattern
   SparsityPattern sp(dof_handler.n_dofs(),
@@ -110,7 +110,7 @@ check_this()
   DoFHandler<dim> dof_handler(tr);
   dof_handler.distribute_dofs(fe);
 
-  check_this<DoFHandler<dim>>(dof_handler);
+  check_this(dof_handler);
 }
 
 
@@ -119,10 +119,8 @@ main()
 {
   try
     {
-      std::ofstream logfile("output");
-      logfile << std::setprecision(2);
+      initlog();
       deallog << std::setprecision(2);
-      deallog.attach(logfile);
 
       check_this();
       return 0;

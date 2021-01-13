@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2015 - 2018 by the deal.II authors
+// Copyright (C) 2015 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -72,8 +72,6 @@ namespace LinearAlgebra
    * ::dealii::LinearAlgebra::VectorSpaceVector. As opposed to the array of
    * the C++ standard library, this class implements an element of a vector
    * space suitable for numerical computations.
-   *
-   * @author Bruno Turcksin, 2015.
    */
   template <typename Number>
   class Vector : public ReadWriteVector<Number>,
@@ -159,6 +157,15 @@ namespace LinearAlgebra
     virtual void
     reinit(const VectorSpaceVector<Number> &V,
            const bool omit_zeroing_entries = false) override;
+
+    /**
+     * Returns `false` as this is a serial vector.
+     *
+     * This functionality only needs to be called if using MPI based vectors and
+     * exists in other objects for compatibility.
+     */
+    bool
+    has_ghost_elements() const;
 
     /**
      * Copies the data of the input vector @p in_vector.
@@ -401,9 +408,9 @@ namespace LinearAlgebra
 
   private:
     /**
-     * Serialize the data of this object using boost. This function is
-     * necessary to use boost::archive::text_iarchive and
-     * boost::archive::text_oarchive.
+     * Write and read the data of this object from a stream for the purpose
+     * of serialization using the [BOOST serialization
+     * library](https://www.boost.org/doc/libs/1_74_0/libs/serialization/doc/index.html).
      */
     template <typename Archive>
     void
@@ -500,13 +507,26 @@ namespace LinearAlgebra
 
 
 /**
- * Declare dealii::LinearAlgebra::Vector< Number > as serial vector.
- *
- * @author Uwe Koecher, 2017
+ * Declare dealii::LinearAlgebra::Vector as serial vector.
  */
 template <typename Number>
 struct is_serial_vector<LinearAlgebra::Vector<Number>> : std::true_type
 {};
+
+#ifndef DOXYGEN
+/*----------------------- Inline functions ----------------------------------*/
+
+namespace LinearAlgebra
+{
+  template <typename Number>
+  inline bool
+  Vector<Number>::has_ghost_elements() const
+  {
+    return false;
+  }
+} // namespace LinearAlgebra
+
+#endif
 
 
 DEAL_II_NAMESPACE_CLOSE

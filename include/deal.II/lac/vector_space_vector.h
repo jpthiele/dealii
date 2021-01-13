@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2015 - 2018 by the deal.II authors
+// Copyright (C) 2015 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -50,8 +50,6 @@ namespace LinearAlgebra
    * implement global operations. This class is complementary of
    * ReadWriteVector which allows the access of individual elements but does
    * not allow global operations.
-   *
-   * @author Bruno Turcksin, 2015.
    */
   template <typename Number>
   class VectorSpaceVector
@@ -271,6 +269,22 @@ namespace LinearAlgebra
     virtual ~VectorSpaceVector() = default;
   };
   /*@}*/
+} // namespace LinearAlgebra
+
+// ---------------------------- Free functions --------------------------
+
+namespace LinearAlgebra
+{
+  /**
+   * Shift all entries of the vector by a constant factor so that the mean
+   * value of the vector becomes zero.
+   */
+  template <typename Number>
+  void
+  set_zero_mean_value(VectorSpaceVector<Number> &vector)
+  {
+    vector.add(-vector.mean_value());
+  }
 } // namespace LinearAlgebra
 
 DEAL_II_NAMESPACE_CLOSE

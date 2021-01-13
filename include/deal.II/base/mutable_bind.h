@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2019 by the deal.II authors
+// Copyright (C) 2019 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -19,10 +19,10 @@
 #include <deal.II/base/config.h>
 
 #include <deal.II/base/patterns.h>
-#include <deal.II/base/std_cxx14/utility.h>
 #include <deal.II/base/std_cxx17/tuple.h>
 
 #include <tuple>
+#include <utility>
 
 DEAL_II_NAMESPACE_OPEN
 
@@ -54,7 +54,7 @@ namespace Utilities
    * The arguments are copied to the tuple, with their reference and const
    * attributes removed. Only copy constructible objects are allowed as
    * function arguments. If you need to keep some references around, you may
-   * wrap your function into a std::bind object:
+   * wrap your function into a lambda function:
    *
    * @code
    *  void
@@ -67,17 +67,16 @@ namespace Utilities
    *  const Point<2> p(1, 2);
    *
    *  Utilities::MutableBind<void, double, unsigned int> exp = {
-   *    std::bind(example_function,
-   *              std::cref(p),
-   *              std::placeholders::_1,
-   *              std::placeholders::_2),
+   *    [&p](const double &d,
+   *         const unsigned int i)
+   *    {
+   *      example_function(p, d, i);
+   *    },
    *    {}};
    *
    *  exp.parse_arguments("3.0 : 4");
    *  exp(); // calls example_function(p, 3.0, 4);
    * @endcode
-   *
-   * @authors Luca Heltai, Matthias Maier, 2019.
    */
   template <typename ReturnType, class... FunctionArgs>
   class MutableBind
@@ -106,7 +105,7 @@ namespace Utilities
 
     /**
      * Construct a MutableBind object specifying only the function. By default,
-     * the arguments are left to their defult constructor values.
+     * the arguments are left to their default constructor values.
      */
     template <class FunctionType>
     MutableBind(FunctionType function);
@@ -183,8 +182,6 @@ namespace Utilities
    * bound.parse_arguments("3: 4.0");
    * bound(); // will execute my_function(3, 4.0);
    * @endcode
-   *
-   * @authors Luca Heltai, Matthias Maier, 2019.
    */
   template <typename ReturnType, class... FunctionArgs>
   MutableBind<ReturnType, FunctionArgs...>
@@ -229,7 +226,8 @@ namespace Utilities
     FunctionType function,
     FunctionArgs &&... arguments)
     : function(function)
-    , arguments(std::make_tuple(std::move(arguments)...)){};
+    , arguments(std::make_tuple(std::move(arguments)...))
+  {}
 
 
 
@@ -238,14 +236,16 @@ namespace Utilities
   MutableBind<ReturnType, FunctionArgs...>::MutableBind(FunctionType function,
                                                         TupleType && arguments)
     : function(function)
-    , arguments(std::move(arguments)){};
+    , arguments(std::move(arguments))
+  {}
 
 
 
   template <typename ReturnType, class... FunctionArgs>
   template <class FunctionType>
   MutableBind<ReturnType, FunctionArgs...>::MutableBind(FunctionType function)
-    : function(function){};
+    : function(function)
+  {}
 
 
 
@@ -296,7 +296,7 @@ namespace Utilities
   {
     return MutableBind<ReturnType, FunctionArgs...>(function,
                                                     std::move(arguments)...);
-  };
+  }
 
 
 

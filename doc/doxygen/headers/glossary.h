@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2005 - 2018 by the deal.II authors
+// Copyright (C) 2005 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -327,36 +327,15 @@
  * this, here setting the boundary indicator to 42 for all faces located at
  * $x=-1$:
  * @code
- *   for (typename Triangulation<dim>::active_cell_iterator
- *          cell = triangulation.begin_active();
- *        cell != triangulation.end();
- *        ++cell)
- *     for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
- *       if (cell->face(f)->at_boundary())
- *         if (cell->face(f)->center()[0] == -1)
- *           cell->face(f)->set_boundary_id (42);
+ *   for (auto &face : triangulation.active_face_iterators())
+ *     if (face->at_boundary())
+ *       if (face->center()[0] == -1)
+ *         face->set_boundary_id (42);
  * @endcode
  * This calls functions TriaAccessor::set_boundary_id. In 3d, it may
  * also be appropriate to call TriaAccessor::set_all_boundary_ids instead
  * on each of the selected faces. To query the boundary indicator of a particular
  * face or edge, use TriaAccessor::boundary_id.
- *
- * In older versions of the library (prior to 8.2), if you wanted also
- * to change the way the Triangulation class treated the boundary for
- * the purposes of mesh refinement, you could call
- * Triangulation::set_boundary to associate a boundary object with a
- * particular boundary indicator. This method is still supported, and
- * it allows the Triangulation object to use a different method of
- * finding new points on faces and edges to be refined; the default is
- * to use a FlatManifold object for all faces and edges. The
- * results section of step-49 has a worked example that shows all of
- * this in action.
- *
- * The suggested method from version 8.2 onwards, is to split the
- * geometrical description of the boundary from its physical meaning,
- * by using separately manifold_ids and boundary_ids. The former are
- * used to describe how the geometry changes, and the latter are used
- * to identify the boundary conditions.
  *
  * Many of the functions in namespaces DoFTools and VectorTools take
  * arguments that specify which part of the boundary to work on, and
@@ -377,8 +356,6 @@
  * the long discussion on this topic in the class documentation of
  * parallel::distributed::Triangulation .
  * </dd>
- *
- * @see @ref boundary "The module on boundaries".
  *
  *
  * <dt class="glossary">@anchor GlossCoarseMesh <b>Coarse mesh</b></dt>
@@ -407,7 +384,7 @@
  *
  *   Triangulation objects store cells in <i>levels</i>: in
  *   particular, all cells of a coarse mesh are on level zero. Their
- *   children (if we executed Triangulation::refine_global(1) on a
+ *   children (if we executed `Triangulation::refine_global(1)` on a
  *   coarse mesh) would then be at level one, etc. The coarse mesh of a
  *   triangulation (in the sense of the previous paragraph) then
  *   consists of exactly the level-zero cells of a triangulation. (Whether
@@ -711,7 +688,7 @@
  * </dd>
  *
  *
- * <dt class="glossary">@anchor GlossDimension <b>Dimensions @p dim and @p spacedim</b></dt>
+ * <dt class="glossary">@anchor GlossDimension <b>Dimensions `dim` and `spacedim`</b></dt>
  *
  * <dd> Many classes and functions in deal.II have two template parameters,
  * @p dim and @p spacedim. An example is the basic Triangulation class:
@@ -719,7 +696,7 @@
  *   template <int dim, int spacedim=dim>
  *   class Triangulation {...};
  * @endcode
- * In all of these contexts where you see @p dim and @p spacedim referenced,
+ * In all of these contexts where you see `dim` and `spacedim` referenced,
  * these arguments have the following meaning:
  *
  * <ul>
@@ -1033,6 +1010,31 @@
  * </dd>
  *
  *
+ * <dt class="glossary">@anchor geometry_paper <b>geometry paper</b></dt>
+ * <dd>The "geometry paper" is a paper by L. Heltai, W. Bangerth, M. Kronbichler,
+ * and A. Mola, titled
+ * "Using exact geometry information in finite element computations", that
+ * describes how deal.II describes the geometry of domains. In particular,
+ * it discusses the algorithmic foundations on which the Manifold class
+ * is based, and what kind of information it needs to provide for mesh
+ * refinement, the computation of normal vectors, and the many other places
+ * where geometry enters into finite element computations.
+ *
+ * The paper is currently available on arXiv at https://arxiv.org/abs/1910.09824 .
+ * The full reference for this paper is as follows:
+ * @code{.bib}
+@misc{heltai2019using,
+    title={Using exact geometry information in finite element computations},
+    author={Luca Heltai and Wolfgang Bangerth and Martin Kronbichler and Andrea Mola},
+    year={2019},
+    eprint={1910.09824},
+    archivePrefix={arXiv},
+    primaryClass={math.NA}
+}
+ * @endcode
+ * </dd>
+ *
+ *
  * <dt class="glossary">@anchor GlossGhostCell <b>Ghost cells</b></dt>
  * <dd>
  * If a mesh is distributed across multiple MPI processes using the
@@ -1109,7 +1111,7 @@
  * that are owned by other processors. In other words, for each element
  * there is a clear owner among all of the processors and those elements
  * that the current processor stores but does not own (i.e., the
- * "ghost elements") are simply mirror images of a master value somewhere
+ * "ghost elements") are simply mirror images of a primary value somewhere
  * else -- thus, the name "ghost". This is also the case for the
  * parallel::distributed::Vector class.
  *
@@ -1125,7 +1127,7 @@
  * the name "ghost element" may be misleading since in this view,
  * every element we have available locally may or may not be stored
  * somewhere else as well, but even if it is, the local element is not
- * a mirror value of a master location as there is no owner of each
+ * a mirror value of a primary location as there is no owner of each
  * element.
  *
  * @note The @ref distributed documentation module provides a brief
@@ -1133,12 +1135,13 @@
  * used.
  * </dd>
  *
- * <dt class="glossary">@anchor hp_paper <b>%hp paper</b></dt>
- * <dd>The "hp paper" is a paper by W. Bangerth and O. Kayser-Herold, titled
+ *
+ * <dt class="glossary">@anchor hp_paper <b>%hp-paper</b></dt>
+ * <dd>The "hp-paper" is a paper by W. Bangerth and O. Kayser-Herold, titled
  * "Data Structures and Requirements for hp Finite Element Software", that
  * describes many of the algorithms and data structures used in the implementation
- * of the hp framework of deal.II. In particular, it summarizes many of the
- * tricky points that have to be considered for %hp finite elements using continuous
+ * of the hp-framework of deal.II. In particular, it summarizes many of the
+ * tricky points that have to be considered for %hp-finite elements using continuous
  * elements.
  *
  * The full reference for this paper is as follows:
@@ -1247,9 +1250,7 @@
  * center has an $x$ component less than zero:
  *
  * @code
- * for (typename Triangulation<dim>::active_cell_iterator cell =
- *  triangulation.begin_active();
- *  cell != triangulation.end(); ++cell)
+ * for (auto &cell : triangulation.active_cell_iterators())
  *   if (cell->center()[0] < 0)
  *     cell->set_manifold_id (42);
  * @endcode

@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 1998 - 2019 by the deal.II authors
+// Copyright (C) 1998 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -23,7 +23,8 @@
 #include <deal.II/base/tensor.h>
 
 DEAL_II_DISABLE_EXTRA_DIAGNOSTICS
-#include <boost/geometry.hpp>
+#include <boost/geometry/core/cs.hpp>
+#include <boost/geometry/geometries/point.hpp>
 DEAL_II_ENABLE_EXTRA_DIAGNOSTICS
 
 #include <cmath>
@@ -104,7 +105,6 @@ DEAL_II_NAMESPACE_OPEN
  *
  *
  * @ingroup geomprimitives
- * @author Wolfgang Bangerth, 1997
  */
 template <int dim, typename Number = double>
 class Point : public Tensor<1, dim, Number>
@@ -307,7 +307,7 @@ public:
 
   /**
    * Return the Euclidean distance of <tt>this</tt> point to the point
-   * <tt>p</tt>, i.e. the <tt>l_2</tt> norm of the difference between the
+   * <tt>p</tt>, i.e. the $l_2$ norm of the difference between the
    * vectors representing the two points.
    *
    * @note This function can also be used in CUDA device code.
@@ -330,7 +330,8 @@ public:
 
   /**
    * Read or write the data of this object to or from a stream for the purpose
-   * of serialization
+   * of serialization using the [BOOST serialization
+   * library](https://www.boost.org/doc/libs/1_74_0/libs/serialization/doc/index.html).
    */
   template <class Archive>
   void
@@ -471,7 +472,7 @@ inline DEAL_II_CUDA_HOST_DEV Number
 Point<dim, Number>::operator()(const unsigned int index) const
 {
 #  ifndef __CUDA_ARCH__
-  AssertIndexRange(index, dim);
+  AssertIndexRange(static_cast<int>(index), dim);
 #  endif
   return this->values[index];
 }
@@ -483,7 +484,7 @@ inline DEAL_II_CUDA_HOST_DEV Number &
 Point<dim, Number>::operator()(const unsigned int index)
 {
 #  ifndef __CUDA_ARCH__
-  AssertIndexRange(index, dim);
+  AssertIndexRange(static_cast<int>(index), dim);
 #  endif
   return this->values[index];
 }

@@ -252,12 +252,12 @@ class Triangulation;
  *   void
  *   TimeDependent::solve_primal_problem ()
  *   {
- *     do_loop (std::bind(&TimeStepBase::init_for_primal_problem,
- *                        std::placeholders::_1),
- *              std::bind(&TimeStepBase::solve_primal_problem,
- *                        std::placeholders::_1),
- *              timestepping_data_primal,
- *              forward);
+ *     do_loop([](TimeStepBase *const time_step)
+ *               { time_step->init_for_primal_problem(); },
+ *             [](TimeStepBase *const time_step)
+ *               { time_step->solve_primal_problem(); },
+ *             timestepping_data_primal,
+ *             forward);
  *   }
  * @endcode
  * The latter function shows rather clear how most of the loops are invoked
@@ -276,23 +276,23 @@ class Triangulation;
  * look-back and the last one denotes in which direction the loop is to be
  * run.
  *
- * Using function pointers through the @p std::bind functions provided by the
- * <tt>C++</tt> standard library, it is possible to do neat tricks, like the
- * following, also taken from the wave program, in this case from the function
- * @p refine_grids:
+ * Using lambda functions it is possible to do neat tricks, like the
+ * following in this case from the function @p refine_grids:
  * @code
  *   ...
  *   compute the thresholds for refinement
  *   ...
  *
- *   do_loop (std::bind(&TimeStepBase_Tria<dim>::init_for_refinement,
- *                      std::placeholders::_1),
- *            std::bind(&TimeStepBase_Wave<dim>::refine_grid,
- *                      std::placeholders::_1,
- *                      TimeStepBase_Tria<dim>::RefinementData (
- *                        top_threshold, bottom_threshold)),
- *            TimeDependent::TimeSteppingData (0,1),
- *            TimeDependent::forward);
+ *   do_loop([](TimeStepBase_Tria<dim> *const time_step)
+ *             { time_step->init_for_refinement(); },
+ *           [=](TimeStepBase_Wave<dim> *const time_step)
+ *             {
+ *               time_step->solve_primal_problem(
+ *                 TimeStepBase_Tria<dim>::RefinementData (
+ *                   top_threshold, bottom_threshold)));
+ *             },
+ *           TimeDependent::TimeSteppingData (0,1),
+ *           TimeDependent::forward);
  * @endcode
  * TimeStepBase_Wave<dim>::refine_grid is a function taking an argument, unlike
  * all the other functions used above within the loops. However, in this special
@@ -357,9 +357,6 @@ class Triangulation;
  *         timesteps[step-look_back]->sleep(look_back);
  *   }
  * @endcode
- *
- *
- * @author Wolfgang Bangerth, 1999
  */
 class TimeDependent
 {
@@ -535,10 +532,15 @@ public:
    * wake_up and @p sleep functions are called.
    *
    * To see how this function work, note that the function @p
-   * solve_primal_problem only consists of a call to <tt>do_loop
-   * (std::bind(&TimeStepBase::init_for_primal_problem, std::placeholders::_1),
-   * std::bind(&TimeStepBase::solve_primal_problem, std::placeholders::_1),
-   * timestepping_data_primal, forward);</tt>.
+   * solve_primal_problem only consists of the following call:
+   * @code
+   * do_loop([](TimeStepBase *const time_step)
+   *           { time_step->init_for_primal_problem(); },
+   *         [](TimeStepBase *const time_step)
+   *           { time_step->solve_primal_problem(); },
+   *         timestepping_data_primal,
+   *         forward);
+   * @endcode
    *
    * Note also, that the given class from which the two functions are taken
    * needs not necessarily be TimeStepBase, but it could also be a derived
@@ -549,10 +551,9 @@ public:
    * the TimeStepBase class.
    *
    * Instead of using the above form, you can equally well use
-   * <tt>std::bind(&X::unary_function, std::placeholders::_1, args...)</tt>
-   * which
-   * lets the @p do_loop function call the given function with the specified
-   * parameters.
+   * <tt>[args...](X *const x){x->unary_function(args...);}</tt>
+   * which lets the @p do_loop function call the given function with the
+   * specified parameters.
    */
   template <typename InitFunctionObject, typename LoopFunctionObject>
   void
@@ -660,8 +661,6 @@ private:
  * functions (namely @p sleep and @p wake_up), the interface to previous and
  * following grids, and some functions to be called before a new loop over all
  * time steps is started.
- *
- * @author Wolfgang Bangerth, 1999
  */
 class TimeStepBase : public Subscriptor
 {
@@ -836,7 +835,7 @@ public:
   /**
    * Compute the time difference to the last time step. If this timestep is
    * the first one, this function will result in an exception. Though this
-   * behaviour seems a bit drastic, it is appropriate in most cases since if
+   * behavior seems a bit drastic, it is appropriate in most cases since if
    * there is no previous time step you will need special treatment anyway and
    * this way no invalid value is returned which could lead to wrong but
    * unnoticed results of your computation. (The only sensible value to return
@@ -952,8 +951,6 @@ private:
  * TimeStepBase_Tria() class. These used to be local data types of that class,
  * but some compilers choked on some aspects, so we put them into a namespace
  * of their own.
- *
- * @author Wolfgang Bangerth, 2001
  */
 namespace TimeStepBase_Tria_Flags
 {
@@ -1300,11 +1297,8 @@ namespace TimeStepBase_Tria_Flags
  * change in the grids between subsequent time levels, while also trying to
  * retain the freedom of refining each grid separately. There are lots of
  * flags and numbers controlling this function, which might drastically change
- * the behaviour of the function -- see the description of the flags for
+ * the behavior of the function -- see the description of the flags for
  * further information.
- *
- * @author Wolfgang Bangerth, 1999; large parts taken from the wave program,
- * by Wolfgang Bangerth 1998
  */
 template <int dim>
 class TimeStepBase_Tria : public TimeStepBase
@@ -1345,7 +1339,7 @@ public:
 
   /**
    * Constructor. Takes a coarse grid from which the grids on this time level
-   * will be derived and some flags steering the behaviour of this object.
+   * will be derived and some flags steering the behavior of this object.
    *
    * The ownership of the coarse grid stays with the creator of this object.
    * However, it is locked from destruction to guarantee the lifetime of the
@@ -1471,7 +1465,7 @@ protected:
    * Triangulation used at this time level. Since this is something that every
    * time stepping scheme needs to have, we can safely put it into the base
    * class. Note that the triangulation is frequently deleted and rebuilt by
-   * the functions @p sleep and @p wake_up to save memory, if such a behaviour
+   * the functions @p sleep and @p wake_up to save memory, if such a behavior
    * is specified in the @p flags structure.
    */
   SmartPointer<Triangulation<dim, dim>, TimeStepBase_Tria<dim>> tria;

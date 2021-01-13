@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2005 - 2018 by the deal.II authors
+// Copyright (C) 2005 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -47,7 +47,6 @@ class Vector;
  * vector operations.
  *
  * @ingroup Matrix1
- * @author Guido Kanschat, 2005, 2006
  */
 template <typename number>
 class TridiagonalMatrix
@@ -292,8 +291,8 @@ template <typename number>
 inline number
 TridiagonalMatrix<number>::operator()(size_type i, size_type j) const
 {
-  Assert(i < n(), ExcIndexRange(i, 0, n()));
-  Assert(j < n(), ExcIndexRange(j, 0, n()));
+  AssertIndexRange(i, n());
+  AssertIndexRange(j, n());
   Assert(i <= j + 1, ExcIndexRange(i, j - 1, j + 2));
   Assert(j <= i + 1, ExcIndexRange(j, i - 1, i + 2));
 
@@ -319,8 +318,8 @@ template <typename number>
 inline number &
 TridiagonalMatrix<number>::operator()(size_type i, size_type j)
 {
-  Assert(i < n(), ExcIndexRange(i, 0, n()));
-  Assert(j < n(), ExcIndexRange(j, 0, n()));
+  AssertIndexRange(i, n());
+  AssertIndexRange(j, n());
   Assert(i <= j + 1, ExcIndexRange(i, j - 1, j + 2));
   Assert(j <= i + 1, ExcIndexRange(j, i - 1, i + 2));
 

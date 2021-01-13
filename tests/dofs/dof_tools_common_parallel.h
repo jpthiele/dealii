@@ -43,17 +43,27 @@
 
 // forward declaration of the function that must be provided in the
 // .cc files
-template <typename DoFHandlerType>
+template <int dim>
 void
-check_this(const DoFHandlerType &dof_handler);
+check_this(const DoFHandler<dim> &dof_handler);
 
 
 
 void
-output_bool_vector(std::vector<bool> &v)
+output_bool_vector(const std::vector<bool> &v)
 {
   for (unsigned int i = 0; i < v.size(); ++i)
     deallog << (v[i] ? '1' : '0');
+  deallog << std::endl;
+}
+
+
+
+void
+output_bool_vector(const IndexSet &v)
+{
+  for (unsigned int i = 0; i < v.size(); ++i)
+    deallog << (v.is_element(i) ? '1' : '0');
   deallog << std::endl;
 }
 
@@ -84,16 +94,7 @@ check(const FiniteElement<dim> &fe, const std::string &name)
   DoFHandler<dim> dof_handler(tria);
   dof_handler.distribute_dofs(fe);
 
-  // setup hp DoFHandler
-  hp::FECollection<dim> fe_collection(fe);
-  hp::DoFHandler<dim>   hp_dof_handler(tria);
-  hp_dof_handler.distribute_dofs(fe_collection);
-
-  check_this<DoFHandler<dof_handler.dimension, dof_handler.space_dimension>>(
-    dof_handler);
-  check_this<
-    hp::DoFHandler<hp_dof_handler.dimension, hp_dof_handler.space_dimension>>(
-    hp_dof_handler);
+  check_this(dof_handler);
 }
 
 

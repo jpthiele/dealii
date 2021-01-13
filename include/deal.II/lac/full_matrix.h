@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 1999 - 2018 by the deal.II authors
+// Copyright (C) 1999 - 2019 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -64,8 +64,6 @@ class LAPACKFullMatrix;
  * programs, see
  * @ref Instantiations
  * for details.
- *
- * @author Guido Kanschat, Franz-Theo Suttmeier, Wolfgang Bangerth, 1993-2004
  */
 template <typename number>
 class FullMatrix : public Table<2, number>

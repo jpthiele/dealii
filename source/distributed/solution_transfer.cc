@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2009 - 2019 by the deal.II authors
+// Copyright (C) 2009 - 2020 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -156,12 +156,12 @@ namespace parallel
       Assert(tria != nullptr, ExcInternalError());
 
       handle = tria->register_data_attach(
-        std::bind(
-          &SolutionTransfer<dim, VectorType, DoFHandlerType>::pack_callback,
-          this,
-          std::placeholders::_1,
-          std::placeholders::_2),
-        /*returns_variable_size_data=*/DoFHandlerType::is_hp_dof_handler);
+        [this](
+          const typename Triangulation<dim, DoFHandlerType::space_dimension>::
+            cell_iterator &cell_,
+          const typename Triangulation<dim, DoFHandlerType::space_dimension>::
+            CellStatus status) { return this->pack_callback(cell_, status); },
+        /*returns_variable_size_data=*/dof_handler->has_hp_capabilities());
     }
 
 
@@ -194,26 +194,6 @@ namespace parallel
       prepare_for_serialization(const std::vector<const VectorType *> &all_in)
     {
       prepare_for_coarsening_and_refinement(all_in);
-    }
-
-
-
-    template <int dim, typename VectorType, typename DoFHandlerType>
-    void
-    SolutionTransfer<dim, VectorType, DoFHandlerType>::prepare_serialization(
-      const VectorType &in)
-    {
-      prepare_for_serialization(in);
-    }
-
-
-
-    template <int dim, typename VectorType, typename DoFHandlerType>
-    void
-    SolutionTransfer<dim, VectorType, DoFHandlerType>::prepare_serialization(
-      const std::vector<const VectorType *> &all_in)
-    {
-      prepare_for_serialization(all_in);
     }
 
 
@@ -262,14 +242,15 @@ namespace parallel
 
       tria->notify_ready_to_unpack(
         handle,
-        std::bind(
-          &SolutionTransfer<dim, VectorType, DoFHandlerType>::unpack_callback,
-          this,
-          std::placeholders::_1,
-          std::placeholders::_2,
-          std::placeholders::_3,
-          std::ref(all_out)));
-
+        [this, &all_out](
+          const typename Triangulation<dim, DoFHandlerType::space_dimension>::
+            cell_iterator &cell_,
+          const typename Triangulation<dim, DoFHandlerType::space_dimension>::
+            CellStatus status,
+          const boost::iterator_range<std::vector<char>::const_iterator>
+            &data_range) {
+          this->unpack_callback(cell_, status, data_range, all_out);
+        });
 
       for (typename std::vector<VectorType *>::iterator it = all_out.begin();
            it != all_out.end();
@@ -308,7 +289,7 @@ namespace parallel
         input_vectors.size());
 
       unsigned int fe_index = 0;
-      if (DoFHandlerType::is_hp_dof_handler)
+      if (dof_handler->has_hp_capabilities())
         {
           switch (status)
             {
@@ -327,31 +308,17 @@ namespace parallel
                 dim,
                 DoFHandlerType::space_dimension>::CELL_COARSEN:
                 {
-                  // In case of coarsening, we need to find a suitable fe index
+                  // In case of coarsening, we need to find a suitable FE index
                   // for the parent cell. We choose the 'least dominant fe'
                   // on all children from the associated FECollection.
-                  std::set<unsigned int> fe_indices_children;
-                  for (unsigned int child_index = 0;
-                       child_index < cell->n_children();
-                       ++child_index)
-                    {
-                      const auto child = cell->child(child_index);
-                      Assert(child->active() && child->coarsen_flag_set(),
-                             typename dealii::Triangulation<
-                               dim>::ExcInconsistentCoarseningFlags());
+#  ifdef DEBUG
+                  for (const auto &child : cell->child_iterators())
+                    Assert(child->is_active() && child->coarsen_flag_set(),
+                           typename dealii::Triangulation<
+                             dim>::ExcInconsistentCoarseningFlags());
+#  endif
 
-                      fe_indices_children.insert(child->future_fe_index());
-                    }
-                  Assert(!fe_indices_children.empty(), ExcInternalError());
-
-                  fe_index =
-                    dof_handler->get_fe_collection().find_dominated_fe_extended(
-                      fe_indices_children, /*codim=*/0);
-
-                  Assert(fe_index != numbers::invalid_unsigned_int,
-                         typename dealii::hp::FECollection<
-                           dim>::ExcNoDominatedFiniteElementAmongstChildren());
-
+                  fe_index = cell->dominated_future_fe_on_children();
                   break;
                 }
 
@@ -362,7 +329,10 @@ namespace parallel
         }
 
       const unsigned int dofs_per_cell =
-        dof_handler->get_fe(fe_index).dofs_per_cell;
+        dof_handler->get_fe(fe_index).n_dofs_per_cell();
+
+      if (dofs_per_cell == 0)
+        return std::vector<char>(); // nothing to do for FE_Nothing
 
       auto it_input  = input_vectors.cbegin();
       auto it_output = dof_values.begin();
@@ -393,7 +363,7 @@ namespace parallel
       typename DoFHandlerType::cell_iterator cell(*cell_, dof_handler);
 
       unsigned int fe_index = 0;
-      if (DoFHandlerType::is_hp_dof_handler)
+      if (dof_handler->has_hp_capabilities())
         {
           switch (status)
             {
@@ -413,10 +383,10 @@ namespace parallel
                 DoFHandlerType::space_dimension>::CELL_REFINE:
                 {
                   // After refinement, this particular cell is no longer active,
-                  // and its children have inherited its fe index. However, to
-                  // unpack the data on the old cell, we need to recover its fe
+                  // and its children have inherited its FE index. However, to
+                  // unpack the data on the old cell, we need to recover its FE
                   // index from one of the children. Just to be sure, we also
-                  // check if all children have the same fe index.
+                  // check if all children have the same FE index.
                   fe_index = cell->child(0)->active_fe_index();
                   for (unsigned int child_index = 1;
                        child_index < cell->n_children();
@@ -434,7 +404,10 @@ namespace parallel
         }
 
       const unsigned int dofs_per_cell =
-        dof_handler->get_fe(fe_index).dofs_per_cell;
+        dof_handler->get_fe(fe_index).n_dofs_per_cell();
+
+      if (dofs_per_cell == 0)
+        return; // nothing to do for FE_Nothing
 
       const std::vector<::dealii::Vector<typename VectorType::value_type>>
         dof_values =

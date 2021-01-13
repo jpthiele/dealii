@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------
 //
-// Copyright (C) 2004 - 2018 by the deal.II authors
+// Copyright (C) 2004 - 2019 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -63,7 +63,6 @@ namespace PETScWrappers
      * not all elements.
      *
      * @ingroup PETScWrappers
-     * @author Guido Kanschat, Roy Stogner, Wolfgang Bangerth, 2004
      */
     class const_iterator
     {
@@ -279,7 +278,6 @@ namespace PETScWrappers
    *
    * @ingroup PETScWrappers
    * @ingroup Matrix1
-   * @author Wolfgang Bangerth, 2004
    */
   class MatrixBase : public Subscriptor
   {
