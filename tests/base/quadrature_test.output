@@ -20,6 +20,17 @@ DEAL:1d::Quadrature no.17 is exact for polynomials of degree 5
 DEAL:1d::Quadrature no.18 is exact for polynomials of degree 7
 DEAL:1d::Quadrature no.19 is exact for polynomials of degree 9
 DEAL:1d::Quadrature no.20 is exact for polynomials of degree 11
+DEAL:1d::Quadrature no.21 is exact for polynomials of degree 0
+DEAL:1d::Quadrature no.22 is exact for polynomials of degree 0
+DEAL:1d::Quadrature no.23 is exact for polynomials of degree 2
+DEAL:1d::Quadrature no.24 is exact for polynomials of degree 2
+DEAL:1d::1.00000
+DEAL:1d::0.333333
+DEAL:1d::Quadrature no.25 is exact for polynomials of degree 4
+DEAL:1d::Quadrature no.26 is exact for polynomials of degree 4
+DEAL:1d::1.00000
+DEAL:1d::0.644949
+DEAL:1d::0.155051
 DEAL:2d::Quadrature no.0 is exact for polynomials of degree 1
 DEAL:2d::Quadrature no.1 is exact for polynomials of degree 1
 DEAL:2d::Quadrature no.2 is exact for polynomials of degree 3
@@ -41,6 +52,12 @@ DEAL:2d::Quadrature no.17 is exact for polynomials of degree 5
 DEAL:2d::Quadrature no.18 is exact for polynomials of degree 7
 DEAL:2d::Quadrature no.19 is exact for polynomials of degree 9
 DEAL:2d::Quadrature no.20 is exact for polynomials of degree 11
+DEAL:2d::Quadrature no.21 is exact for polynomials of degree 0
+DEAL:2d::Quadrature no.22 is exact for polynomials of degree 0
+DEAL:2d::Quadrature no.23 is exact for polynomials of degree 2
+DEAL:2d::Quadrature no.24 is exact for polynomials of degree 2
+DEAL:2d::Quadrature no.25 is exact for polynomials of degree 4
+DEAL:2d::Quadrature no.26 is exact for polynomials of degree 4
 DEAL:2d:faces::Quadrature no.0 is exact for polynomials of degree 1
 DEAL:2d:faces::Quadrature no.1 is exact for polynomials of degree 1
 DEAL:2d:faces::Quadrature no.2 is exact for polynomials of degree 3
@@ -62,6 +79,12 @@ DEAL:2d:faces::Quadrature no.17 is exact for polynomials of degree 5
 DEAL:2d:faces::Quadrature no.18 is exact for polynomials of degree 7
 DEAL:2d:faces::Quadrature no.19 is exact for polynomials of degree 9
 DEAL:2d:faces::Quadrature no.20 is exact for polynomials of degree 11
+DEAL:2d:faces::Quadrature no.21 is exact for polynomials of degree 0
+DEAL:2d:faces::Quadrature no.22 is exact for polynomials of degree 0
+DEAL:2d:faces::Quadrature no.23 is exact for polynomials of degree 2
+DEAL:2d:faces::Quadrature no.24 is exact for polynomials of degree 2
+DEAL:2d:faces::Quadrature no.25 is exact for polynomials of degree 4
+DEAL:2d:faces::Quadrature no.26 is exact for polynomials of degree 4
 DEAL:2d:subfaces::Quadrature no.0 is exact for polynomials of degree 1
 DEAL:2d:subfaces::Quadrature no.1 is exact for polynomials of degree 1
 DEAL:2d:subfaces::Quadrature no.2 is exact for polynomials of degree 3
@@ -83,6 +106,12 @@ DEAL:2d:subfaces::Quadrature no.17 is exact for polynomials of degree 5
 DEAL:2d:subfaces::Quadrature no.18 is exact for polynomials of degree 7
 DEAL:2d:subfaces::Quadrature no.19 is exact for polynomials of degree 9
 DEAL:2d:subfaces::Quadrature no.20 is exact for polynomials of degree 11
+DEAL:2d:subfaces::Quadrature no.21 is exact for polynomials of degree 0
+DEAL:2d:subfaces::Quadrature no.22 is exact for polynomials of degree 0
+DEAL:2d:subfaces::Quadrature no.23 is exact for polynomials of degree 2
+DEAL:2d:subfaces::Quadrature no.24 is exact for polynomials of degree 2
+DEAL:2d:subfaces::Quadrature no.25 is exact for polynomials of degree 4
+DEAL:2d:subfaces::Quadrature no.26 is exact for polynomials of degree 4
 DEAL:3d::Quadrature no.0 is exact for polynomials of degree 1
 DEAL:3d::Quadrature no.1 is exact for polynomials of degree 1
 DEAL:3d::Quadrature no.2 is exact for polynomials of degree 3
@@ -104,6 +133,12 @@ DEAL:3d::Quadrature no.17 is exact for polynomials of degree 5
 DEAL:3d::Quadrature no.18 is exact for polynomials of degree 7
 DEAL:3d::Quadrature no.19 is exact for polynomials of degree 9
 DEAL:3d::Quadrature no.20 is exact for polynomials of degree 11
+DEAL:3d::Quadrature no.21 is exact for polynomials of degree 0
+DEAL:3d::Quadrature no.22 is exact for polynomials of degree 0
+DEAL:3d::Quadrature no.23 is exact for polynomials of degree 2
+DEAL:3d::Quadrature no.24 is exact for polynomials of degree 2
+DEAL:3d::Quadrature no.25 is exact for polynomials of degree 4
+DEAL:3d::Quadrature no.26 is exact for polynomials of degree 4
 DEAL:3d:faces::Quadrature no.0 is exact for polynomials of degree 1
 DEAL:3d:faces::Quadrature no.1 is exact for polynomials of degree 1
 DEAL:3d:faces::Quadrature no.2 is exact for polynomials of degree 3
@@ -125,6 +160,12 @@ DEAL:3d:faces::Quadrature no.17 is exact for polynomials of degree 5
 DEAL:3d:faces::Quadrature no.18 is exact for polynomials of degree 7
 DEAL:3d:faces::Quadrature no.19 is exact for polynomials of degree 9
 DEAL:3d:faces::Quadrature no.20 is exact for polynomials of degree 11
+DEAL:3d:faces::Quadrature no.21 is exact for polynomials of degree 1
+DEAL:3d:faces::Quadrature no.22 is exact for polynomials of degree 1
+DEAL:3d:faces::Quadrature no.23 is exact for polynomials of degree 3
+DEAL:3d:faces::Quadrature no.24 is exact for polynomials of degree 3
+DEAL:3d:faces::Quadrature no.25 is exact for polynomials of degree 5
+DEAL:3d:faces::Quadrature no.26 is exact for polynomials of degree 5
 DEAL:3d:subfaces::Quadrature no.0 is exact for polynomials of degree 1
 DEAL:3d:subfaces::Quadrature no.1 is exact for polynomials of degree 1
 DEAL:3d:subfaces::Quadrature no.2 is exact for polynomials of degree 3
@@ -146,3 +187,9 @@ DEAL:3d:subfaces::Quadrature no.17 is exact for polynomials of degree 5
 DEAL:3d:subfaces::Quadrature no.18 is exact for polynomials of degree 7
 DEAL:3d:subfaces::Quadrature no.19 is exact for polynomials of degree 9
 DEAL:3d:subfaces::Quadrature no.20 is exact for polynomials of degree 11
+DEAL:3d:subfaces::Quadrature no.21 is exact for polynomials of degree 1
+DEAL:3d:subfaces::Quadrature no.22 is exact for polynomials of degree 1
+DEAL:3d:subfaces::Quadrature no.23 is exact for polynomials of degree 3
+DEAL:3d:subfaces::Quadrature no.24 is exact for polynomials of degree 3
+DEAL:3d:subfaces::Quadrature no.25 is exact for polynomials of degree 5
+DEAL:3d:subfaces::Quadrature no.26 is exact for polynomials of degree 5

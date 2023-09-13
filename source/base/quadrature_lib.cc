@@ -144,6 +144,113 @@ namespace internal
 } // namespace internal
 
 
+namespace internal
+{
+  namespace QGaussRadau
+  {
+    // Implementes lookup table after affine transformation
+    // original for [-1,1] listed on
+    // https://mathworld.wolfram.com/RadauQuadrature.html
+    std::vector<double>
+    get_left_quadrature_points(const unsigned int n)
+    {
+      std::vector<double> q_points(n);
+      switch (n)
+        {
+          case 1:
+            q_points[0] = 0.;
+            break;
+          case 2:
+            q_points[0] = 0.;
+            q_points[1] = 2. / 3.;
+            break;
+          case 3:
+            q_points[0] = 0.;
+            q_points[1] = (6. - std::sqrt(6)) * 0.1;
+            q_points[2] = (6. + std::sqrt(6)) * 0.1;
+            break;
+          default:
+            Assert(false, dealii::StandardExceptions::ExcNotImplemented());
+            break;
+        }
+      return q_points;
+    }
+
+    std::vector<double>
+    get_quadrature_points(const unsigned int                 n,
+                          ::dealii::QGaussRadau<1>::EndPoint ep)
+    {
+      std::vector<double> points(n);
+      std::vector<double> left_points = get_left_quadrature_points(n);
+      switch (ep)
+        {
+          case ::dealii::QGaussRadau<1>::left:
+            return left_points;
+          case ::dealii::QGaussRadau<1>::right:
+            for (unsigned int i = 0; i < n; ++i)
+              {
+                points[i] = 1. - left_points[i];
+              }
+            return points;
+          default:
+            Assert(
+              false,
+              ExcMessage(
+                "This constructor can only be called with either "
+                "QGaussRadau::left or QGaussRadau::right as second argument."));
+        }
+    }
+
+    // Implementes lookup table after affine transformation (*0.5)
+    // original for [-1,1] listed on
+    // https://mathworld.wolfram.com/RadauQuadrature.html
+    std::vector<double>
+    get_quadrature_weights(const unsigned int n)
+    {
+      std::vector<double> weights(n);
+      switch (n)
+        {
+          case 1:
+            weights[0] = 1.;
+            break;
+          case 2:
+            weights[0] = 0.25;
+            weights[1] = 0.75;
+            break;
+          case 3:
+            weights[0] = 1. / 9.;
+            weights[1] = (16. + std::sqrt(6)) / 36.;
+            weights[2] = (16. - std::sqrt(6)) / 36.;
+            break;
+
+          default:
+            Assert(false, dealii::StandardExceptions::ExcNotImplemented());
+            break;
+        }
+      return weights;
+    }
+  } // namespace QGaussRadau
+} // namespace internal
+
+#ifndef DOXYGEN
+template <>
+QGaussRadau<1>::QGaussRadau(const unsigned int n, EndPoint ep)
+  : Quadrature<1>(n)
+  , ep(ep)
+{
+  Assert(n > 0, ExcMessage("Need at least one point for quadrature rules"));
+  std::vector<double> p = internal::QGaussRadau::get_quadrature_points(n, ep);
+  std::vector<double> w = internal::QGaussRadau::get_quadrature_weights(n);
+
+  for (unsigned int i = 0; i < this->size(); ++i)
+    {
+      this->quadrature_points[i] = dealii::Point<1>(p[i]);
+      this->weights[i]           = w[i];
+    }
+}
+#endif
+
+
 #ifndef DOXYGEN
 template <>
 QGaussLobatto<1>::QGaussLobatto(const unsigned int n)
@@ -816,6 +923,15 @@ QSorted<dim>::compare_weights(const unsigned int a, const unsigned int b) const
 template <int dim>
 QGauss<dim>::QGauss(const unsigned int n)
   : Quadrature<dim>(QGauss<dim - 1>(n), QGauss<1>(n))
+{}
+
+
+
+template <int dim>
+QGaussRadau<dim>::QGaussRadau(const unsigned int n, EndPoint ep)
+  : Quadrature<dim>(
+      QGaussRadau<1>(n, static_cast<QGaussRadau<1>::EndPoint>(ep)))
+  , ep(ep)
 {}
 
 
@@ -2177,6 +2293,7 @@ QGaussPyramid<dim>::QGaussPyramid(const unsigned int n_points_1D)
 // explicit specialization
 // note that 1d formulae are specialized by implementation above
 template class QGauss<2>;
+template class QGaussRadau<2>;
 template class QGaussLobatto<2>;
 template class QMidpoint<2>;
 template class QTrapezoid<2>;
@@ -2185,6 +2302,7 @@ template class QMilne<2>;
 template class QWeddle<2>;
 
 template class QGauss<3>;
+template class QGaussRadau<3>;
 template class QGaussLobatto<3>;
 template class QMidpoint<3>;
 template class QTrapezoid<3>;

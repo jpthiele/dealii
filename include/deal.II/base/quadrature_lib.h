@@ -47,6 +47,58 @@ public:
   QGauss(const unsigned int n);
 };
 
+/**
+ * The Gauss-Radau family of quadrature rules for numerical integration.
+ *
+ * This modification of the Gauss quadrature uses one of the two interval end
+ * points as well. Being exact for polynomials of degree <i>2n-2</i>, this
+ * formula is suboptimal by one degrees.
+ *
+ * The quadrature points are the left interval end point plus the roots of the
+ * polynomial <i>(P<sub>n-1</sub>(x)+P<sub>n</sub>(x))/(1+x)</i>
+ * where <i>P<sub>n-1</sub></i> and <i>P<sub>n</sub></i> are Legendre
+ * polynomials. The quadrature weights are <i>2/n<sup>2</sup></i> and
+ * <i>(1-x<sub>i</sub>)/(n<sup>2</sup>(P<sub>n-1</sub>(x<sub>i</sub>))<sup>2</sup>)</i>.
+ *
+ * For the right Gauss-Radau formula the quadrature points are the points
+ * <i>1-x<sub>i</sub></i>, where <i>x<sub>i</sub></i> are the quadrature points
+ * of the left Gauss-Radau formula.
+ *
+ * @note This implementation only features the known exact roots up to
+ * n = 3 quadrature points.
+ *
+ * @sa https://mathworld.wolfram.com/RadauQuadrature.html @sa
+ */
+template <int dim>
+class QGaussRadau : public Quadrature<dim>
+{
+public:
+  /* EndPoint is used to specify which of the two endpoints of the unit interval
+   * is used also as quadrature point
+   */
+  enum EndPoint
+  {
+    /**
+     * Left end point.
+     */
+    left,
+    /**
+     * Right end point.
+     */
+    right
+  };
+  QGaussRadau(const unsigned int n, EndPoint ep = QGaussRadau::left);
+
+  /**
+   * Move constructor. We cannot rely on the move constructor for `Quadrature`,
+   * since it does not know about the additional member `ep` of this class.
+   */
+  QGaussRadau(QGaussRadau<dim> &&) noexcept = default;
+
+private:
+  const EndPoint ep;
+};
+
 
 /**
  * The Gauss-Lobatto family of quadrature rules for numerical integration.
@@ -942,6 +994,8 @@ public:
 #ifndef DOXYGEN
 template <>
 QGauss<1>::QGauss(const unsigned int n);
+template <>
+QGaussRadau<1>::QGaussRadau(const unsigned int n, QGaussRadau<1>::EndPoint ep);
 template <>
 QGaussLobatto<1>::QGaussLobatto(const unsigned int n);
 
