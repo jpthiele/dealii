@@ -23,7 +23,8 @@ repos:
   - id: trailing-whitespace
     files: |
         (?x)(
-            \.(cc|h$|html|doc|txt)
+            \.(cc|h$|html|doc|txt)|
+            ^doc/news
         )
     exclude: ^bundled/
 - repo: https://github.com/gitleaks/gitleaks
